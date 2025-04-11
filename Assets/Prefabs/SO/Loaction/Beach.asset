@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 77a7a17d67321ae479d1231dc6f25683, type: 3}
+  m_Name: Beach
+  m_EditorClassIdentifier: 
+  dungeonName: Beach
+  background: {fileID: 2315442627036945117, guid: 552dde4ff24abb04db6361d8f6df99a5, type: 3}
+  enemyPrefabs:
+  - {fileID: 7078000496904047455, guid: 1a4a8ca264fe8d043868d599011cf304, type: 3}
+  - {fileID: 7078000496904047455, guid: c8ce87bedd549704a9040142105d4f70, type: 3}
+  - {fileID: 7078000496904047455, guid: 25c02c9bbe6b3904197eef96635f87b5, type: 3}
+  waveCount: 3

@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 77a7a17d67321ae479d1231dc6f25683, type: 3}
+  m_Name: Swamp
+  m_EditorClassIdentifier: 
+  dungeonName: Plain
+  background: {fileID: 7025974255842938386, guid: e92a79d2e7f4b424ca85b4373f51475c, type: 3}
+  enemyPrefabs:
+  - {fileID: 7078000496904047455, guid: dd90b53ac44851d4aa1a2d547cd4fb8b, type: 3}
+  - {fileID: 7078000496904047455, guid: 25c02c9bbe6b3904197eef96635f87b5, type: 3}
+  - {fileID: 7078000496904047455, guid: 1325f4829757f074382d32e692acde58, type: 3}
+  waveCount: 5
