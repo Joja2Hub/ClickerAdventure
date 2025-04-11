@@ -13,6 +13,15 @@ public class PointInteraction : MonoBehaviour
     public int requiredLevel; // Требуемый уровень для входа
     public PointType pointType; // Тип точки
     public LocationData locationData; // Данные локации (для данжа)
+    public TownData townData;
+
+    public GameObject townUIPrefab;
+
+    private void Start()
+    {
+        townUIPrefab.gameObject.SetActive(false);
+    }
+
 
     private void Update()
     {
@@ -44,21 +53,16 @@ public class PointInteraction : MonoBehaviour
         Collider2D hit = Physics2D.OverlapPoint(touchWorldPosition);
         if (hit != null && hit.transform.IsChildOf(transform))
         {
-            Debug.Log($"Attempt to interact with point: {pointName}");
 
             if (PlayerStats.Instance.level >= requiredLevel)
             {
-                Debug.Log($"Access granted to point: {pointName}");
-
                 switch (pointType)
                 {
                     case PointType.Dungeon:
-                        Debug.Log($"Opening battle screen for dungeon: {pointName}");
                         StartBattle();
                         break;
 
                     case PointType.Town:
-                        Debug.Log($"Loading town scene for point: {pointName}");
                         LoadTownScene();
                         break;
                 }
@@ -72,10 +76,11 @@ public class PointInteraction : MonoBehaviour
 
     private void LoadTownScene()
     {
-        // Здесь можно загрузить сцену города
-        Debug.Log("Loading town scene...");
-        //SceneManager.LoadScene("TownScene");
+        Debug.Log("Открытие");
+        townUIPrefab.gameObject.SetActive(true);
     }
+
+
 
     private void StartBattle()
     {

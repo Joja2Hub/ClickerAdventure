@@ -6,7 +6,6 @@ public class UIManager : MonoBehaviour
     public GameObject settingsPanel;
     public GameObject questsPanel;
     public GameObject inventoryPanel;
-    public GameObject townPanel;
     public GameObject levelPanel;
     public GameObject blocker;
 
@@ -30,6 +29,8 @@ public class UIManager : MonoBehaviour
         UpdateLevel(stats.level);
 
     }
+
+
 
     private void UpdateMoney(int newMoney)
     {
@@ -57,10 +58,6 @@ public class UIManager : MonoBehaviour
         ShowPanel(inventoryPanel);
     }
 
-    public void ShowTownPanel()
-    {
-        ShowPanel(townPanel);
-    }
 
     public void ShowLevelPanel()
     {
@@ -82,7 +79,6 @@ public class UIManager : MonoBehaviour
         settingsPanel.SetActive(false);
         questsPanel.SetActive(false);
         inventoryPanel.SetActive(false);
-        townPanel.SetActive(false);
         levelPanel.SetActive(false);
         blocker.SetActive(false);
 
