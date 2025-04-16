@@ -14,7 +14,7 @@ public class PointInteractionEditor : Editor
         script.pointType = (PointType)EditorGUILayout.EnumPopup("Point Type", script.pointType);
 
         // Поле GameObject — townUIPrefab
-        script.townUIPrefab = (GameObject)EditorGUILayout.ObjectField("Town UI Prefab", script.townUIPrefab, typeof(GameObject), true);
+        
 
         // Условная отрисовка
         if (script.pointType == PointType.Dungeon)
@@ -24,6 +24,7 @@ public class PointInteractionEditor : Editor
         else if (script.pointType == PointType.Town)
         {
             script.townData = (TownData)EditorGUILayout.ObjectField("Town Data", script.townData, typeof(TownData), false);
+            script.townUIPrefab = (GameObject)EditorGUILayout.ObjectField("Town UI Panel", script.townUIPrefab, typeof(GameObject), true);
         }
 
         if (GUI.changed)

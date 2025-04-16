@@ -51,6 +51,17 @@ public class Enemy : MonoBehaviour
         if (attackCoroutine != null)
             StopCoroutine(attackCoroutine);
 
+        foreach (var quest in QuestManager.Instance.activeQuests)
+        {
+            foreach (var obj in quest.objectives)
+            {
+                if (obj is KillEnemyObjective killObj)
+                {
+                    killObj.OnEnemyKilled();
+                }
+            }
+        }
+
         OnDefeated?.Invoke(enemyData);
         Destroy(gameObject);
     }

@@ -1,5 +1,7 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.EventSystems;
+
 
 public enum PointType
 {
@@ -17,14 +19,19 @@ public class PointInteraction : MonoBehaviour
 
     public GameObject townUIPrefab;
 
-    private void Start()
-    {
-        townUIPrefab.gameObject.SetActive(false);
-    }
 
+    private void Awake()
+    {
+      
+
+    }
 
     private void Update()
     {
+        // Блокируем клик, если он был по UI
+        if (EventSystem.current.IsPointerOverGameObject())
+            return;
+
         // Обработка касаний
         if (Input.touchCount > 0)
         {
@@ -42,6 +49,7 @@ public class PointInteraction : MonoBehaviour
             HandleTouch(Input.mousePosition);
         }
     }
+
 
     private void HandleTouch(Vector3 touchPosition)
     {

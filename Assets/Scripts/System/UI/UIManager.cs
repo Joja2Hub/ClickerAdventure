@@ -4,13 +4,20 @@ using UnityEngine;
 public class UIManager : MonoBehaviour
 {
     public GameObject settingsPanel;
-    public GameObject questsPanel;
+    public GameObject acctiveQuestsPanel;
     public GameObject inventoryPanel;
     public GameObject levelPanel;
+    public GameObject questPanel;
     public GameObject blocker;
+
 
     public TextMeshProUGUI moneyText;
     public TextMeshProUGUI levelText;
+
+    private void Awake()
+    {
+        
+    }
 
     private void Start()
     {
@@ -48,9 +55,9 @@ public class UIManager : MonoBehaviour
         ShowPanel(settingsPanel);
     }
 
-    public void ShowQuestsPanel()
+    public void ShowActiveQuestsPanel()
     {
-        ShowPanel(questsPanel);
+        ShowPanel(acctiveQuestsPanel);
     }
 
     public void ShowInventoryPanel()
@@ -62,6 +69,11 @@ public class UIManager : MonoBehaviour
     public void ShowLevelPanel()
     {
         ShowPanel(levelPanel);
+    }
+
+    public void ShowQuestPanel()
+    {
+        ShowPanel(questPanel);
     }
 
     private void ShowPanel(GameObject panel)
@@ -77,7 +89,8 @@ public class UIManager : MonoBehaviour
     public void HideAllPanels()
     {
         settingsPanel.SetActive(false);
-        questsPanel.SetActive(false);
+        acctiveQuestsPanel.SetActive(false);
+        questPanel.SetActive(false);
         inventoryPanel.SetActive(false);
         levelPanel.SetActive(false);
         blocker.SetActive(false);
