@@ -12,3 +12,6 @@ public class QuestData : ScriptableObject
     public QuestObjective[] objectives;
 
 }
+
+
+

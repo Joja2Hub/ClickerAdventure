@@ -6,6 +6,7 @@ public class ActiveQuestUIItem : MonoBehaviour
 {
     public TextMeshProUGUI questNameText;
     public TextMeshProUGUI descriptionText;
+    public TextMeshProUGUI progressText;
 
     public void Setup(QuestData quest)
     {
@@ -13,4 +14,7 @@ public class ActiveQuestUIItem : MonoBehaviour
         descriptionText.text = quest.description;
         // В будущем можно сюда добавить отображение целей и прогресса
     }
+
+ 
+
 }

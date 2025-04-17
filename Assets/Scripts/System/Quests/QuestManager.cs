@@ -7,10 +7,12 @@ public class QuestManager : MonoBehaviour
 
     public List<QuestData> activeQuests = new List<QuestData>();
 
+
     private void Awake()
     {
         if (Instance == null) Instance = this;
         else Destroy(gameObject);
+        DontDestroyOnLoad(this.gameObject);
     }
 
     public void AcceptQuest(QuestData quest)
