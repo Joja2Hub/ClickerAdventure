@@ -792,8 +792,6 @@ MonoBehaviour:
   questListParent: {fileID: 740124754}
   availableQuests:
   - {fileID: 11400000, guid: 871ce6d554115094788bbd5df7c8a106, type: 2}
-  - {fileID: 11400000, guid: 3bc00d86a27c45e41a1cc8bd7fde9c92, type: 2}
-  - {fileID: 11400000, guid: 411143066400fc84abdae3ba86b642ba, type: 2}
 --- !u!1001 &363994736
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2259,7 +2257,7 @@ MonoBehaviour:
   money: 100
   currentHealth: 100
   maxHealth: 100
-  currentDmg: 1
+  currentDmg: 100
 --- !u!4 &912882537
 Transform:
   m_ObjectHideFlags: 0

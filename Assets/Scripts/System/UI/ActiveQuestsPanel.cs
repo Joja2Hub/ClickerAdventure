@@ -17,6 +17,7 @@ public class ActiveQuestsPanel : MonoBehaviour
             GameObject questGO = Instantiate(questPrefab, questListParent);
             ActiveQuestUIItem uiItem = questGO.GetComponent<ActiveQuestUIItem>();
             uiItem.Setup(quest);
+            uiItem.UpdateQuest(quest);
         }
     }
 

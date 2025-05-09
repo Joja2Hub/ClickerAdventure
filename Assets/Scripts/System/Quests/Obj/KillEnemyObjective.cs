@@ -4,7 +4,7 @@ using UnityEngine;
 public class KillEnemyObjective : QuestObjective
 {
     public int targetCount;
-    private int currentCount;
+    public int currentCount;
 
     public override void Initialize()
     {
@@ -25,6 +25,6 @@ public class KillEnemyObjective : QuestObjective
 
     public override void CheckProgress()
     {
-        // Можно использовать если надо вручную проверять выполнение
+        
     }
 }

@@ -11,6 +11,22 @@ public class QuestData : ScriptableObject
 
     public QuestObjective[] objectives;
 
+
+    public bool CheckReady()
+    {
+        
+        for (int i = 0; i < objectives.Length; i++)
+            if (objectives[i].isCompleted != true)
+            {
+                return false;
+                Debug.Log("Нет");
+            }
+
+        Debug.Log("Квест сдан все круто");
+        return true;
+
+    }
+
 }
 
 
