@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "185245333316",
+    "project_id": "clikerquest",
+    "storage_bucket": "clikerquest.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:185245333316:android:3feda04f31770554e64911",
+        "android_client_info": {
+          "package_name": "com.Joja2.ClickerAdnveture"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBAmFxFh2SMrGP2tUCpPZQPLFXtFOsNEVE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

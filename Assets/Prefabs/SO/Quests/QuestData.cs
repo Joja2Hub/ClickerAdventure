@@ -9,25 +9,19 @@ public class QuestData : ScriptableObject
     public int rewardXP;
     public int hardReward;
 
+    // Цели внутриигрового квеста
     public QuestObjective[] objectives;
-
 
     public bool CheckReady()
     {
-        
-        for (int i = 0; i < objectives.Length; i++)
-            if (objectives[i].isCompleted != true)
+        foreach (var objective in objectives)
+        {
+            if (!objective.isCompleted)
             {
                 return false;
-                Debug.Log("Нет");
             }
-
-        Debug.Log("Квест сдан все круто");
+        }
+        Debug.Log("Квест завершен: " + questName);
         return true;
-
     }
-
 }
-
-
-
