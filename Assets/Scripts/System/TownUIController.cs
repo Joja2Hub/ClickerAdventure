@@ -14,14 +14,10 @@ public class TownUIController : MonoBehaviour
         shopButton.anchoredPosition = data.shopPosition;
         guildButton.anchoredPosition = data.guildPosition;
         innButton.anchoredPosition = data.innPosition;
-        // инициализируй остальное
     }
 
     public void hideWindow()
     {
         this.gameObject.SetActive(false);
     }
-
-
-
 }

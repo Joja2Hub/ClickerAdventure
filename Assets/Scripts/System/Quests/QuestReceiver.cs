@@ -1,29 +1,50 @@
 using Firebase.Firestore;
+using System.Threading.Tasks;
 using UnityEngine;
 
 public class QuestReceiver : MonoBehaviour
 {
-    private FirebaseFirestore db;
+    FirebaseFirestore db;
 
     private void Start()
     {
         db = FirebaseFirestore.DefaultInstance;
-        ListenForQuests("HCCCr1GN0znPBOE1Q2Do"); 
+
+        string userId = "id1"; // Замените на нужного пользователя
+        LoadExternalQuests(userId);
     }
 
-    private void ListenForQuests(string deviceId)
+    public void LoadExternalQuests(string userId)
     {
-        DocumentReference questRef = db.Collection("Quests").Document(deviceId);
-
-        questRef.Listen(snapshot =>
+        db.Collection("users").Document(userId).Collection("quests").GetSnapshotAsync().ContinueWith(task =>
         {
-            if (snapshot.Exists)
+            if (task.IsFaulted || task.IsCanceled)
             {
-                var receivedQuest = snapshot.ConvertTo<ExternalQuestData>();
-                QuestData quest = receivedQuest.ToQuestData();
+                Debug.LogError("Ошибка загрузки квестов из Firestore");
+                return;
+            }
 
-                QuestManager.Instance.AcceptQuest(quest);
-                Debug.Log("Получен новый внешний квест: " + quest.questName);
+            QuerySnapshot snapshot = task.Result;
+
+            foreach (var doc in snapshot.Documents)
+            {
+                doc.TryGetValue("questName", out string questName);
+                doc.TryGetValue("description", out string description);
+                doc.TryGetValue("rewardGold", out int rewardGold);
+                doc.TryGetValue("rewardXP", out int rewardXP);
+                doc.TryGetValue("hardReward", out int hardReward);
+
+                ExternalQuestData external = new ExternalQuestData
+                {
+                    externalId = doc.Id,
+                    questName = questName,
+                    description = description,
+                    rewardGold = rewardGold,
+                    rewardXP = rewardXP,
+                    hardReward = hardReward
+                };
+                QuestManager.Instance.externalQuestDatas.Add(external);
+                
             }
         });
     }
