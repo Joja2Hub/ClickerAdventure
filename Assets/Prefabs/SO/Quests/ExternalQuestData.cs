@@ -9,16 +9,6 @@ public class ExternalQuestData
     public int rewardGold;
     public int rewardXP;
     public int hardReward;
+    public bool isComplete;
 
-    public QuestData ToQuestData()
-    {
-        var quest = ScriptableObject.CreateInstance<QuestData>();
-        quest.questName = questName;
-        quest.description = description;
-        quest.rewardGold = rewardGold;
-        quest.rewardXP = rewardXP;
-        quest.hardReward = hardReward;
-        quest.objectives = new QuestObjective[0];
-        return quest;
-    }
 }

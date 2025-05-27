@@ -7,33 +7,63 @@ public class ActiveQuestUIItem : MonoBehaviour
     public TextMeshProUGUI questNameText;
     public TextMeshProUGUI descriptionText;
     public TextMeshProUGUI progressText;
-    private QuestData currentQuest;
-
     public Button readyBut;
+
+    private bool isExternal;
+    private QuestData currentQuest;
+    private ExternalQuestData currentExternal;
 
     public void Setup(QuestData quest)
     {
+        isExternal = false;
         currentQuest = quest;
         questNameText.text = currentQuest.questName;
         descriptionText.text = currentQuest.description;
         readyBut.interactable = false;
-        
-        // ¬ будущем можно сюда добавить отображение целей и прогресса
+
+        UpdateQuest(quest); // Ќа вс€кий случай
+    }
+
+    public void SetupExternal(ExternalQuestData quest)
+    {
+        isExternal = true;
+        currentExternal = quest;
+        questNameText.text = quest.questName;
+        descriptionText.text = quest.description;
+
+        readyBut.interactable = quest.isComplete;
     }
 
     public void UpdateQuest(QuestData quest)
     {
-        if(quest.CheckReady()) 
+        if (quest.CheckReady())
             readyBut.interactable = true;
     }
 
     public void CompleteQuest()
     {
-        PlayerStats.Instance.AddExperience(currentQuest.rewardXP);
-        PlayerStats.Instance.AddMoney(currentQuest.rewardGold);
-        QuestManager.Instance.RemoveQuest(currentQuest);
+        if (isExternal)
+        {
+            if (!currentExternal.isComplete)
+            {
+                Debug.LogWarning("Ќельз€ сдать невыполненный внешний квест");
+                return;
+            }
+
+            PlayerStats.Instance.AddExperience(currentExternal.rewardXP);
+            PlayerStats.Instance.AddMoney(currentExternal.rewardGold);
+            //PlayerStats.Instance.AddHardCurrency(currentExternal.hardReward); // если така€ есть
+
+            QuestManager.Instance.externalQuestDatas.Remove(currentExternal);
+        }
+        else
+        {
+            PlayerStats.Instance.AddExperience(currentQuest.rewardXP);
+            PlayerStats.Instance.AddMoney(currentQuest.rewardGold);
+
+            QuestManager.Instance.RemoveQuest(currentQuest);
+        }
+
         Destroy(gameObject);
     }
- 
-
 }
