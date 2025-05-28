@@ -1321,6 +1321,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ded5cc37ff8416d4785867a1a3f8c49b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  userId: id1
 --- !u!1001 &594624346
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2827,8 +2828,12 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2932651609436394133, guid: 13c7e32d5c46e92498cf33f518511b7c, type: 3}
-      propertyPath: m_Enabled
+      propertyPath: m_Color.a
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2932651609436394133, guid: 13c7e32d5c46e92498cf33f518511b7c, type: 3}
+      propertyPath: m_Enabled
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4872888642012837206, guid: 13c7e32d5c46e92498cf33f518511b7c, type: 3}
       propertyPath: m_AnchoredPosition.x
@@ -2847,8 +2852,12 @@ PrefabInstance:
       value: -471
       objectReference: {fileID: 0}
     - target: {fileID: 5792596396119577122, guid: 13c7e32d5c46e92498cf33f518511b7c, type: 3}
-      propertyPath: m_Enabled
+      propertyPath: m_Color.a
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5792596396119577122, guid: 13c7e32d5c46e92498cf33f518511b7c, type: 3}
+      propertyPath: m_Enabled
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6073844210837386775, guid: 13c7e32d5c46e92498cf33f518511b7c, type: 3}
       propertyPath: m_Name
@@ -2859,8 +2868,12 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6956759504646961626, guid: 13c7e32d5c46e92498cf33f518511b7c, type: 3}
-      propertyPath: m_Enabled
+      propertyPath: m_Color.a
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6956759504646961626, guid: 13c7e32d5c46e92498cf33f518511b7c, type: 3}
+      propertyPath: m_Enabled
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8343963335129361032, guid: 13c7e32d5c46e92498cf33f518511b7c, type: 3}
       propertyPath: m_AnchoredPosition.x
@@ -5218,8 +5231,12 @@ PrefabInstance:
       value: 1058.6326
       objectReference: {fileID: 0}
     - target: {fileID: 5792596396119577122, guid: 13c7e32d5c46e92498cf33f518511b7c, type: 3}
-      propertyPath: m_Enabled
+      propertyPath: m_Color.a
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5792596396119577122, guid: 13c7e32d5c46e92498cf33f518511b7c, type: 3}
+      propertyPath: m_Enabled
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6073844210837386775, guid: 13c7e32d5c46e92498cf33f518511b7c, type: 3}
       propertyPath: m_Name
@@ -5230,8 +5247,12 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6956759504646961626, guid: 13c7e32d5c46e92498cf33f518511b7c, type: 3}
-      propertyPath: m_Enabled
+      propertyPath: m_Color.a
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6956759504646961626, guid: 13c7e32d5c46e92498cf33f518511b7c, type: 3}
+      propertyPath: m_Enabled
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8343963335129361032, guid: 13c7e32d5c46e92498cf33f518511b7c, type: 3}
       propertyPath: m_AnchoredPosition.x

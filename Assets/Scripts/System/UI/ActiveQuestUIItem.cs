@@ -6,7 +6,7 @@ public class ActiveQuestUIItem : MonoBehaviour
 {
     public TextMeshProUGUI questNameText;
     public TextMeshProUGUI descriptionText;
-    public TextMeshProUGUI progressText;
+    public TextMeshProUGUI rewardText;
     public Button readyBut;
 
     private bool isExternal;
@@ -19,6 +19,7 @@ public class ActiveQuestUIItem : MonoBehaviour
         currentQuest = quest;
         questNameText.text = currentQuest.questName;
         descriptionText.text = currentQuest.description;
+        rewardText.text = currentQuest.rewardGold.ToString();
         readyBut.interactable = false;
 
         UpdateQuest(quest); // На всякий случай
@@ -30,6 +31,7 @@ public class ActiveQuestUIItem : MonoBehaviour
         currentExternal = quest;
         questNameText.text = quest.questName;
         descriptionText.text = quest.description;
+        rewardText.text = quest.rewardGold.ToString();
 
         readyBut.interactable = quest.isComplete;
     }
