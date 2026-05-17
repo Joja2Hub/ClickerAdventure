@@ -1,12 +1,15 @@
-using UnityEngine;
+п»їusing UnityEngine;
 
 public class ActiveQuestsPanel : MonoBehaviour
 {
-    public Transform questListParent; // Сюда добавлять UI-квесты
-    public GameObject questPrefab; // Префаб одного UI-элемента
+    public Transform questListParent;
+    public GameObject questPrefab;
 
     public void RefreshActiveQuests()
     {
+        if (QuestManager.Instance == null)
+            return;
+
         foreach (Transform child in questListParent)
         {
             Destroy(child.gameObject);
@@ -27,9 +30,8 @@ public class ActiveQuestsPanel : MonoBehaviour
         }
     }
 
-
     private void OnEnable()
     {
-        RefreshActiveQuests(); // Обновлять каждый раз при открытии панели
+        RefreshActiveQuests();
     }
 }

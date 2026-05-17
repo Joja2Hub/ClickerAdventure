@@ -1,4 +1,4 @@
-﻿using TMPro;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -19,9 +19,9 @@ public class ActiveQuestUIItem : MonoBehaviour
         currentQuest = quest;
         questNameText.text = currentQuest.questName;
         descriptionText.text = GetProgressDescription(currentQuest);
-        rewardText.text = $"{currentQuest.rewardGold} / {currentQuest.rewardXP} XP";
+        rewardText.text = $"{currentQuest.rewardGold} gold / {currentQuest.rewardXP} XP";
 
-        UpdateQuest(quest);
+        SetButtonState(quest.CheckReady(), "Claim");
     }
 
     public void SetupExternal(ExternalQuestData quest)
@@ -29,45 +29,68 @@ public class ActiveQuestUIItem : MonoBehaviour
         isExternal = true;
         currentExternal = quest;
         questNameText.text = quest.questName;
-        descriptionText.text = quest.description;
-        rewardText.text = $"{quest.rewardGold} / {quest.rewardXP} XP";
+        descriptionText.text = BuildExternalDescription(quest);
+        rewardText.text = $"{quest.rewardGold} gold / {quest.rewardXP} XP";
 
-        readyBut.interactable = quest.isComplete;
+        if (quest.CanClaimReward)
+        {
+            SetButtonState(true, "Claim");
+        }
+        else if (quest.CanSubmitForReview)
+        {
+            SetButtonState(true, "Done");
+        }
+        else
+        {
+            SetButtonState(false, "Waiting");
+        }
     }
 
     public void UpdateQuest(QuestData quest)
     {
         descriptionText.text = GetProgressDescription(quest);
-        readyBut.interactable = quest.CheckReady();
+        SetButtonState(quest.CheckReady(), "Claim");
     }
 
     public void CompleteQuest()
     {
         if (isExternal)
         {
-            if (!currentExternal.isComplete)
-            {
-                Debug.LogWarning("Cannot complete an unfinished external quest.");
-                return;
-            }
-
-            PlayerStats.Instance.AddExperience(currentExternal.rewardXP);
-            PlayerStats.Instance.AddMoney(currentExternal.rewardGold);
-            QuestManager.Instance.externalQuestDatas.Remove(currentExternal);
+            HandleExternalAction();
+            return;
         }
-        else
+
+        if (!currentQuest.CheckReady())
         {
-            if (!currentQuest.CheckReady())
-            {
-                Debug.LogWarning("Cannot complete an unfinished quest.");
-                return;
-            }
-
-            PlayerStats.Instance.AddExperience(currentQuest.rewardXP);
-            PlayerStats.Instance.AddMoney(currentQuest.rewardGold);
-            QuestManager.Instance.CompleteQuest(currentQuest);
+            Debug.LogWarning("Cannot complete an unfinished quest.");
+            return;
         }
 
+        PlayerStats.Instance.AddExperience(currentQuest.rewardXP);
+        PlayerStats.Instance.AddMoney(currentQuest.rewardGold);
+        QuestManager.Instance.CompleteQuest(currentQuest);
+        Destroy(gameObject);
+    }
+
+    private void HandleExternalAction()
+    {
+        if (currentExternal.CanSubmitForReview)
+        {
+            QuestReceiver.Instance?.SubmitForParentApproval(currentExternal);
+            SetupExternal(currentExternal);
+            return;
+        }
+
+        if (!currentExternal.CanClaimReward)
+        {
+            Debug.LogWarning("This real-world task is still waiting for parent approval.");
+            return;
+        }
+
+        PlayerStats.Instance.AddExperience(currentExternal.rewardXP);
+        PlayerStats.Instance.AddMoney(currentExternal.rewardGold);
+        QuestReceiver.Instance?.MarkRewardClaimed(currentExternal);
+        QuestManager.Instance.externalQuestDatas.Remove(currentExternal);
         Destroy(gameObject);
     }
 
@@ -77,5 +100,40 @@ public class ActiveQuestUIItem : MonoBehaviour
             return quest.description;
 
         return QuestManager.Instance.GetQuestProgressDescription(quest);
+    }
+
+    private string BuildExternalDescription(ExternalQuestData quest)
+    {
+        string statusText = GetExternalStatusText(quest);
+        if (!string.IsNullOrEmpty(quest.parentNote))
+            statusText += $"\nParent: {quest.parentNote}";
+
+        return $"{quest.description}\nStatus: {statusText}";
+    }
+
+    private string GetExternalStatusText(ExternalQuestData quest)
+    {
+        switch (quest.status)
+        {
+            case RealWorldTaskStatus.Submitted:
+                return "waiting for parent approval";
+            case RealWorldTaskStatus.Approved:
+                return "approved, reward ready";
+            case RealWorldTaskStatus.Rejected:
+                return "needs another try";
+            case RealWorldTaskStatus.Claimed:
+                return "claimed";
+            default:
+                return "ready to do";
+        }
+    }
+
+    private void SetButtonState(bool interactable, string label)
+    {
+        readyBut.interactable = interactable;
+
+        var buttonText = readyBut.GetComponentInChildren<TextMeshProUGUI>();
+        if (buttonText != null)
+            buttonText.text = label;
     }
 }

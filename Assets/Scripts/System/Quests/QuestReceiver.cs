@@ -1,12 +1,25 @@
-﻿using Firebase.Firestore;
+using Firebase.Firestore;
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class QuestReceiver : MonoBehaviour
 {
+    public static QuestReceiver Instance;
+    public event Action OnRealWorldTasksChanged;
+
     private FirebaseFirestore db;
     private ListenerRegistration listener;
 
     [SerializeField] private string userId = "id1";
+    [SerializeField] private string realWorldTasksCollection = "realWorldTasks";
+
+    private CollectionReference RealWorldTasks => db.Collection("users").Document(userId).Collection(realWorldTasksCollection);
+
+    private void Awake()
+    {
+        Instance = this;
+    }
 
     private void Start()
     {
@@ -14,12 +27,106 @@ public class QuestReceiver : MonoBehaviour
         StartListeningForQuestChanges(userId);
     }
 
-    private void StartListeningForQuestChanges(string userId)
+    public void SubmitForParentApproval(ExternalQuestData task, string childNote = "")
     {
-        listener = db.Collection("users").Document(userId).Collection("quests")
+        if (task == null || string.IsNullOrEmpty(task.externalId))
+            return;
+
+        task.status = RealWorldTaskStatus.Submitted;
+        task.childNote = childNote;
+        task.isComplete = false;
+
+        var updates = new Dictionary<string, object>
+        {
+            { "status", RealWorldTaskStatus.Submitted },
+            { "isComplete", false },
+            { "childNote", childNote },
+            { "submittedAt", DateTime.UtcNow.ToString("O") }
+        };
+
+        RealWorldTasks.Document(task.externalId).UpdateAsync(updates).ContinueWith(taskResult =>
+        {
+            if (taskResult.IsFaulted)
+                Debug.LogError($"Failed to submit real-world task '{task.externalId}': {taskResult.Exception}");
+        });
+    }
+
+    public void MarkRewardClaimed(ExternalQuestData task)
+    {
+        if (task == null || string.IsNullOrEmpty(task.externalId))
+            return;
+
+        task.status = RealWorldTaskStatus.Claimed;
+        task.isClaimed = true;
+
+        var updates = new Dictionary<string, object>
+        {
+            { "status", RealWorldTaskStatus.Claimed },
+            { "isClaimed", true },
+            { "claimedAt", DateTime.UtcNow.ToString("O") }
+        };
+
+        RealWorldTasks.Document(task.externalId).UpdateAsync(updates).ContinueWith(taskResult =>
+        {
+            if (taskResult.IsFaulted)
+                Debug.LogError($"Failed to mark real-world task '{task.externalId}' as claimed: {taskResult.Exception}");
+        });
+    }
+
+    public void ApproveTask(ExternalQuestData task, string parentNote = "")
+    {
+        if (task == null || string.IsNullOrEmpty(task.externalId))
+            return;
+
+        task.status = RealWorldTaskStatus.Approved;
+        task.isComplete = true;
+        task.parentNote = parentNote;
+
+        var updates = new Dictionary<string, object>
+        {
+            { "status", RealWorldTaskStatus.Approved },
+            { "isComplete", true },
+            { "parentNote", parentNote },
+            { "reviewedAt", DateTime.UtcNow.ToString("O") }
+        };
+
+        RealWorldTasks.Document(task.externalId).UpdateAsync(updates).ContinueWith(taskResult =>
+        {
+            if (taskResult.IsFaulted)
+                Debug.LogError($"Failed to approve real-world task '{task.externalId}': {taskResult.Exception}");
+        });
+    }
+
+    public void RejectTask(ExternalQuestData task, string parentNote = "")
+    {
+        if (task == null || string.IsNullOrEmpty(task.externalId))
+            return;
+
+        task.status = RealWorldTaskStatus.Rejected;
+        task.isComplete = false;
+        task.parentNote = parentNote;
+
+        var updates = new Dictionary<string, object>
+        {
+            { "status", RealWorldTaskStatus.Rejected },
+            { "isComplete", false },
+            { "parentNote", parentNote },
+            { "reviewedAt", DateTime.UtcNow.ToString("O") }
+        };
+
+        RealWorldTasks.Document(task.externalId).UpdateAsync(updates).ContinueWith(taskResult =>
+        {
+            if (taskResult.IsFaulted)
+                Debug.LogError($"Failed to reject real-world task '{task.externalId}': {taskResult.Exception}");
+        });
+    }
+
+    private void StartListeningForQuestChanges(string currentUserId)
+    {
+        listener = db.Collection("users").Document(currentUserId).Collection(realWorldTasksCollection)
             .Listen(snapshot =>
             {
-                Debug.Log("Quest changes received from Firebase.");
+                Debug.Log("Real-world task changes received from Firebase.");
 
                 if (QuestManager.Instance == null)
                     return;
@@ -28,23 +135,9 @@ public class QuestReceiver : MonoBehaviour
 
                 foreach (var doc in snapshot.Documents)
                 {
-                    doc.TryGetValue("questName", out string questName);
-                    doc.TryGetValue("description", out string description);
-                    doc.TryGetValue("rewardGold", out int rewardGold);
-                    doc.TryGetValue("rewardXP", out int rewardXP);
-                    doc.TryGetValue("hardReward", out int hardReward);
-                    doc.TryGetValue("isComplete", out bool isComplete);
-
-                    ExternalQuestData external = new ExternalQuestData
-                    {
-                        externalId = doc.Id,
-                        questName = questName,
-                        description = description,
-                        rewardGold = rewardGold,
-                        rewardXP = rewardXP,
-                        hardReward = hardReward,
-                        isComplete = isComplete
-                    };
+                    ExternalQuestData external = CreateExternalQuest(doc);
+                    if (external.isClaimed || external.status == RealWorldTaskStatus.Claimed)
+                        continue;
 
                     QuestManager.Instance.externalQuestDatas.Add(external);
                 }
@@ -52,11 +145,57 @@ public class QuestReceiver : MonoBehaviour
                 var panel = FindFirstObjectByType<ActiveQuestsPanel>();
                 if (panel != null && panel.isActiveAndEnabled)
                     panel.RefreshActiveQuests();
+
+                OnRealWorldTasksChanged?.Invoke();
             });
     }
 
     private void OnDestroy()
     {
         listener?.Stop();
+
+        if (Instance == this)
+            Instance = null;
+    }
+
+    private ExternalQuestData CreateExternalQuest(DocumentSnapshot doc)
+    {
+        string questName = GetString(doc, "questName", GetString(doc, "title", "Task"));
+        string description = GetString(doc, "description", string.Empty);
+        string status = GetString(doc, "status", string.Empty);
+        bool isComplete = GetBool(doc, "isComplete", false);
+
+        if (string.IsNullOrEmpty(status))
+            status = isComplete ? RealWorldTaskStatus.Approved : RealWorldTaskStatus.Assigned;
+
+        return new ExternalQuestData
+        {
+            externalId = doc.Id,
+            questName = questName,
+            description = description,
+            rewardGold = GetInt(doc, "rewardGold", 0),
+            rewardXP = GetInt(doc, "rewardXP", 0),
+            hardReward = GetInt(doc, "hardReward", 0),
+            isComplete = isComplete || status == RealWorldTaskStatus.Approved,
+            isClaimed = GetBool(doc, "isClaimed", false),
+            status = status,
+            childNote = GetString(doc, "childNote", string.Empty),
+            parentNote = GetString(doc, "parentNote", string.Empty)
+        };
+    }
+
+    private string GetString(DocumentSnapshot doc, string field, string fallback)
+    {
+        return doc.TryGetValue(field, out string value) ? value : fallback;
+    }
+
+    private int GetInt(DocumentSnapshot doc, string field, int fallback)
+    {
+        return doc.TryGetValue(field, out int value) ? value : fallback;
+    }
+
+    private bool GetBool(DocumentSnapshot doc, string field, bool fallback)
+    {
+        return doc.TryGetValue(field, out bool value) ? value : fallback;
     }
 }
