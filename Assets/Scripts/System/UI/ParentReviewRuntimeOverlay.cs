@@ -21,6 +21,10 @@ public class ParentReviewRuntimeOverlay : MonoBehaviour
     private Transform listParent;
     private TextMeshProUGUI emptyText;
     private TextMeshProUGUI statusText;
+    private TMP_InputField customTitleInput;
+    private TMP_InputField customDescriptionInput;
+    private TMP_InputField customGoldInput;
+    private TMP_InputField customExperienceInput;
     private bool isInitialized;
 
     public void Initialize(QuestReceiver questReceiver)
@@ -63,7 +67,7 @@ public class ParentReviewRuntimeOverlay : MonoBehaviour
         panelRect.anchorMin = new Vector2(0.5f, 0.5f);
         panelRect.anchorMax = new Vector2(0.5f, 0.5f);
         panelRect.pivot = new Vector2(0.5f, 0.5f);
-        panelRect.sizeDelta = new Vector2(940f, 860f);
+        panelRect.sizeDelta = new Vector2(980f, 1040f);
         panelRect.anchoredPosition = Vector2.zero;
         panel.SetActive(false);
 
@@ -77,6 +81,7 @@ public class ParentReviewRuntimeOverlay : MonoBehaviour
 
         BuildHeader(panel.transform);
         BuildQuickAssign(panel.transform);
+        BuildCustomAssign(panel.transform);
 
         statusText = CreateText(panel.transform, "Active: 0  |  Waiting: 0  |  Approved: 0", 21, FontStyles.Bold, TextAlignmentOptions.Left);
         statusText.color = new Color(0.82f, 0.9f, 1f, 1f);
@@ -137,6 +142,44 @@ public class ParentReviewRuntimeOverlay : MonoBehaviour
         }
     }
 
+    private void BuildCustomAssign(Transform parent)
+    {
+        GameObject section = CreatePanel(parent, "CustomAssign", new Color(0.1f, 0.12f, 0.16f, 1f));
+        AddLayoutElement(section, 0f, 238f, 1f);
+
+        VerticalLayoutGroup sectionLayout = section.AddComponent<VerticalLayoutGroup>();
+        sectionLayout.padding = new RectOffset(18, 18, 14, 16);
+        sectionLayout.spacing = 10f;
+        sectionLayout.childControlWidth = true;
+        sectionLayout.childControlHeight = true;
+        sectionLayout.childForceExpandHeight = false;
+
+        TextMeshProUGUI title = CreateText(section.transform, "Custom task", 24, FontStyles.Bold, TextAlignmentOptions.Left);
+        AddLayoutElement(title.gameObject, 0f, 30f, 1f);
+
+        customTitleInput = CreateInput(section.transform, "Task name", 0f, 48f);
+        customDescriptionInput = CreateInput(section.transform, "Description", 0f, 54f);
+
+        GameObject rewardRow = CreateUIObject("RewardRow", section.transform);
+        HorizontalLayoutGroup rewardLayout = rewardRow.AddComponent<HorizontalLayoutGroup>();
+        rewardLayout.spacing = 10f;
+        rewardLayout.childControlWidth = true;
+        rewardLayout.childControlHeight = true;
+        rewardLayout.childForceExpandWidth = false;
+        AddLayoutElement(rewardRow, 0f, 56f, 1f);
+
+        customGoldInput = CreateInput(rewardRow.transform, "Gold", 170f, 52f);
+        customGoldInput.contentType = TMP_InputField.ContentType.IntegerNumber;
+        customGoldInput.text = "30";
+
+        customExperienceInput = CreateInput(rewardRow.transform, "XP", 170f, 52f);
+        customExperienceInput.contentType = TMP_InputField.ContentType.IntegerNumber;
+        customExperienceInput.text = "20";
+
+        Button createButton = CreateButton(rewardRow.transform, "Assign", new Color(0.12f, 0.42f, 0.3f, 1f), new Vector2(190f, 52f));
+        createButton.onClick.AddListener(CreateCustomTask);
+    }
+
     private void BuildTaskScroll(Transform parent)
     {
         GameObject scrollRoot = CreateUIObject("TaskScroll", parent);
@@ -188,6 +231,28 @@ public class ParentReviewRuntimeOverlay : MonoBehaviour
     {
         receiver.CreateRealWorldTask(template.Title, template.Description, template.Gold, template.Experience);
         RewardPopup.ShowMessage("Task assigned", $"+{template.Gold} gold\n+{template.Experience} XP");
+    }
+
+    private void CreateCustomTask()
+    {
+        string taskTitle = customTitleInput != null ? customTitleInput.text.Trim() : string.Empty;
+        if (string.IsNullOrEmpty(taskTitle))
+        {
+            RewardPopup.ShowMessage("Task needs a name", "Add a title first");
+            return;
+        }
+
+        string description = customDescriptionInput != null ? customDescriptionInput.text.Trim() : string.Empty;
+        int gold = ParseReward(customGoldInput, 30);
+        int experience = ParseReward(customExperienceInput, 20);
+
+        receiver.CreateRealWorldTask(taskTitle, description, gold, experience);
+        RewardPopup.ShowMessage("Task assigned", $"+{gold} gold\n+{experience} XP");
+
+        customTitleInput.text = string.Empty;
+        customDescriptionInput.text = string.Empty;
+        customGoldInput.text = "30";
+        customExperienceInput.text = "20";
     }
 
     private void Refresh()
@@ -285,6 +350,19 @@ public class ParentReviewRuntimeOverlay : MonoBehaviour
             badge.color = GetStatusColor(task);
             AddLayoutElement(badge.gameObject, 176f, 54f);
         }
+
+        if (CanCancel(task))
+        {
+            Button cancel = CreateButton(actions.transform, "Cancel", new Color(0.24f, 0.25f, 0.3f, 1f), new Vector2(176f, 48f), 18);
+            cancel.onClick.AddListener(() =>
+            {
+                receiver.CancelTask(task);
+                task.status = RealWorldTaskStatus.Cancelled;
+                task.isClaimed = true;
+                QuestManager.Instance.externalQuestDatas.Remove(task);
+                Refresh();
+            });
+        }
     }
 
     private string GetReadableStatus(ExternalQuestData task)
@@ -297,6 +375,9 @@ public class ParentReviewRuntimeOverlay : MonoBehaviour
 
         if (task.status == RealWorldTaskStatus.Rejected)
             return "Needs redo";
+
+        if (task.status == RealWorldTaskStatus.Cancelled)
+            return "Cancelled";
 
         return "Assigned";
     }
@@ -312,7 +393,25 @@ public class ParentReviewRuntimeOverlay : MonoBehaviour
         if (task.status == RealWorldTaskStatus.Rejected)
             return new Color(1f, 0.42f, 0.36f, 1f);
 
+        if (task.status == RealWorldTaskStatus.Cancelled)
+            return new Color(0.6f, 0.62f, 0.68f, 1f);
+
         return new Color(0.72f, 0.82f, 1f, 1f);
+    }
+
+    private bool CanCancel(ExternalQuestData task)
+    {
+        return task.status == RealWorldTaskStatus.Assigned
+            || task.status == RealWorldTaskStatus.Submitted
+            || task.status == RealWorldTaskStatus.Rejected;
+    }
+
+    private int ParseReward(TMP_InputField input, int fallback)
+    {
+        if (input == null || !int.TryParse(input.text, out int value))
+            return fallback;
+
+        return Mathf.Clamp(value, 0, 9999);
     }
 
     private Canvas CreateCanvas()
@@ -359,6 +458,34 @@ public class ParentReviewRuntimeOverlay : MonoBehaviour
 
         AddLayoutElement(buttonObject, size.x, size.y);
         return button;
+    }
+
+    private TMP_InputField CreateInput(Transform parent, string placeholder, float preferredWidth, float preferredHeight)
+    {
+        GameObject inputObject = CreatePanel(parent, placeholder + "Input", new Color(0.06f, 0.07f, 0.1f, 1f));
+        AddLayoutElement(inputObject, preferredWidth, preferredHeight, preferredWidth <= 0f ? 1f : 0f);
+
+        TMP_InputField input = inputObject.AddComponent<TMP_InputField>();
+        input.textViewport = inputObject.GetComponent<RectTransform>();
+
+        TextMeshProUGUI text = CreateText(inputObject.transform, string.Empty, 20, FontStyles.Normal, TextAlignmentOptions.Left);
+        RectTransform textRect = text.GetComponent<RectTransform>();
+        textRect.anchorMin = Vector2.zero;
+        textRect.anchorMax = Vector2.one;
+        textRect.offsetMin = new Vector2(14f, 6f);
+        textRect.offsetMax = new Vector2(-14f, -6f);
+        input.textComponent = text;
+
+        TextMeshProUGUI placeholderText = CreateText(inputObject.transform, placeholder, 20, FontStyles.Italic, TextAlignmentOptions.Left);
+        placeholderText.color = new Color(0.55f, 0.58f, 0.64f, 1f);
+        RectTransform placeholderRect = placeholderText.GetComponent<RectTransform>();
+        placeholderRect.anchorMin = Vector2.zero;
+        placeholderRect.anchorMax = Vector2.one;
+        placeholderRect.offsetMin = new Vector2(14f, 6f);
+        placeholderRect.offsetMax = new Vector2(-14f, -6f);
+        input.placeholder = placeholderText;
+
+        return input;
     }
 
     private TextMeshProUGUI CreateText(Transform parent, string text, int size, FontStyles style, TextAlignmentOptions alignment)

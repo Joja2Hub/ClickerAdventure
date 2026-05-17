@@ -5,4 +5,5 @@ public static class RealWorldTaskStatus
     public const string Approved = "approved";
     public const string Rejected = "rejected";
     public const string Claimed = "claimed";
+    public const string Cancelled = "cancelled";
 }

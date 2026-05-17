@@ -109,6 +109,31 @@ public class QuestReceiver : MonoBehaviour
         });
     }
 
+    public void CancelTask(ExternalQuestData task, string parentNote = "Cancelled by parent")
+    {
+        if (task == null || string.IsNullOrEmpty(task.externalId))
+            return;
+
+        task.status = RealWorldTaskStatus.Cancelled;
+        task.isClaimed = true;
+        task.parentNote = parentNote;
+
+        var updates = new Dictionary<string, object>
+        {
+            { "status", RealWorldTaskStatus.Cancelled },
+            { "isClaimed", true },
+            { "isComplete", false },
+            { "parentNote", parentNote },
+            { "cancelledAt", DateTime.UtcNow.ToString("O") }
+        };
+
+        RealWorldTasks.Document(task.externalId).UpdateAsync(updates).ContinueWith(taskResult =>
+        {
+            if (taskResult.IsFaulted)
+                Debug.LogError($"Failed to cancel real-world task '{task.externalId}': {taskResult.Exception}");
+        });
+    }
+
     public void ApproveTask(ExternalQuestData task, string parentNote = "")
     {
         if (task == null || string.IsNullOrEmpty(task.externalId))
@@ -172,7 +197,7 @@ public class QuestReceiver : MonoBehaviour
                 foreach (var doc in snapshot.Documents)
                 {
                     ExternalQuestData external = CreateExternalQuest(doc);
-                    if (external.isClaimed || external.status == RealWorldTaskStatus.Claimed)
+                    if (external.isClaimed || external.status == RealWorldTaskStatus.Claimed || external.status == RealWorldTaskStatus.Cancelled)
                         continue;
 
                     QuestManager.Instance.externalQuestDatas.Add(external);

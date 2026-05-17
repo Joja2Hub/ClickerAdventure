@@ -21,6 +21,7 @@ public class ActiveQuestsPanel : MonoBehaviour
             AddEmptyState("No adventure quests are active.");
 
         AddSection("Real-life tasks", "Complete routines and wait for parent approval");
+        AddDailyRoutineSummary();
         AddExternalQuestItems(QuestManager.Instance.externalQuestDatas);
         if (QuestManager.Instance.externalQuestDatas.Count == 0)
             AddEmptyState("No real-life tasks right now.");
@@ -91,6 +92,60 @@ public class ActiveQuestsPanel : MonoBehaviour
         TextMeshProUGUI label = CreateText(empty.transform, text, 24, FontStyles.Italic, new Color(0.75f, 0.79f, 0.86f, 1f));
         Stretch(label.GetComponent<RectTransform>());
         label.alignment = TextAlignmentOptions.Center;
+    }
+
+    private void AddDailyRoutineSummary()
+    {
+        DailyRoutineProgress routineProgress = DailyRoutineProgress.Instance;
+        routineProgress.ResetForCurrentDayIfNeeded();
+
+        GameObject card = CreateListTextObject("DailyRoutineSummary");
+        Image background = card.AddComponent<Image>();
+        background.color = new Color(0.09f, 0.14f, 0.16f, 0.96f);
+        AddLayoutElement(card, 156f);
+
+        VerticalLayoutGroup layout = card.AddComponent<VerticalLayoutGroup>();
+        layout.padding = new RectOffset(22, 22, 14, 16);
+        layout.spacing = 8f;
+        layout.childControlWidth = true;
+        layout.childControlHeight = true;
+        layout.childForceExpandHeight = false;
+
+        TextMeshProUGUI title = CreateText(
+            card.transform,
+            $"Daily routine {routineProgress.CompletedToday}/{routineProgress.DailyGoal}",
+            28,
+            FontStyles.Bold,
+            new Color(0.7f, 1f, 0.78f, 1f));
+        title.alignment = TextAlignmentOptions.Left;
+
+        string bonusStatus = routineProgress.HasClaimedGoalBonusToday
+            ? "Daily bonus claimed"
+            : "Finish today's goal for a streak bonus";
+
+        TextMeshProUGUI subtitle = CreateText(
+            card.transform,
+            $"Streak: {routineProgress.CurrentStreak} days  |  {bonusStatus}",
+            20,
+            FontStyles.Normal,
+            new Color(0.82f, 0.9f, 0.92f, 1f));
+        subtitle.alignment = TextAlignmentOptions.Left;
+
+        GameObject bar = CreateListTextObject("DailyRoutineProgressBar");
+        bar.transform.SetParent(card.transform, false);
+        Image barBackground = bar.AddComponent<Image>();
+        barBackground.color = new Color(0.04f, 0.06f, 0.07f, 1f);
+        AddLayoutElement(bar, 18f);
+
+        GameObject fill = new GameObject("Fill", typeof(RectTransform));
+        fill.transform.SetParent(bar.transform, false);
+        Image fillImage = fill.AddComponent<Image>();
+        fillImage.color = new Color(0.25f, 0.86f, 0.46f, 1f);
+        fillImage.type = Image.Type.Filled;
+        fillImage.fillMethod = Image.FillMethod.Horizontal;
+        fillImage.fillOrigin = (int)Image.OriginHorizontal.Left;
+        fillImage.fillAmount = routineProgress.GoalProgress;
+        Stretch(fill.GetComponent<RectTransform>());
     }
 
     private GameObject CreateListTextObject(string name)

@@ -97,11 +97,33 @@ public class ActiveQuestUIItem : MonoBehaviour
             return;
         }
 
-        PlayerStats.Instance.AddExperience(currentExternal.rewardXP);
-        PlayerStats.Instance.AddMoney(currentExternal.rewardGold);
-        RewardPopup.ShowReward("Real task reward", currentExternal.rewardGold, currentExternal.rewardXP);
+        DailyRoutineRewardResult routineReward = DailyRoutineProgress.Instance.RecordRealTaskClaim();
+        int totalGold = currentExternal.rewardGold + routineReward.BonusGold;
+        int totalExperience = currentExternal.rewardXP + routineReward.BonusExperience;
+
+        PlayerStats.Instance.AddExperience(totalExperience);
+        PlayerStats.Instance.AddMoney(totalGold);
+
+        if (routineReward.HasBonus)
+        {
+            RewardPopup.ShowMessage(
+                "Daily goal complete",
+                $"+{totalGold} gold\n+{totalExperience} XP\nStreak: {routineReward.CurrentStreak} days");
+        }
+        else
+        {
+            RewardPopup.ShowMessage(
+                "Real task reward",
+                $"+{totalGold} gold\n+{totalExperience} XP\nToday: {routineReward.CompletedToday}/{routineReward.DailyGoal}");
+        }
+
         QuestReceiver.Instance?.MarkRewardClaimed(currentExternal);
         QuestManager.Instance.externalQuestDatas.Remove(currentExternal);
+
+        ActiveQuestsPanel activePanel = FindFirstObjectByType<ActiveQuestsPanel>();
+        if (activePanel != null && activePanel.isActiveAndEnabled)
+            activePanel.RefreshActiveQuests();
+
         Destroy(gameObject);
     }
 
