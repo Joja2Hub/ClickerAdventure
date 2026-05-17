@@ -68,6 +68,7 @@ public class ActiveQuestUIItem : MonoBehaviour
 
         PlayerStats.Instance.AddExperience(currentQuest.rewardXP);
         PlayerStats.Instance.AddMoney(currentQuest.rewardGold);
+        RewardPopup.ShowReward("Quest complete", currentQuest.rewardGold, currentQuest.rewardXP);
         QuestManager.Instance.CompleteQuest(currentQuest);
         Destroy(gameObject);
     }
@@ -77,6 +78,7 @@ public class ActiveQuestUIItem : MonoBehaviour
         if (currentExternal.CanSubmitForReview)
         {
             QuestReceiver.Instance?.SubmitForParentApproval(currentExternal);
+            RewardPopup.ShowMessage("Sent to parent", "Waiting for approval");
             SetupExternal(currentExternal);
             return;
         }
@@ -89,6 +91,7 @@ public class ActiveQuestUIItem : MonoBehaviour
 
         PlayerStats.Instance.AddExperience(currentExternal.rewardXP);
         PlayerStats.Instance.AddMoney(currentExternal.rewardGold);
+        RewardPopup.ShowReward("Real task reward", currentExternal.rewardGold, currentExternal.rewardXP);
         QuestReceiver.Instance?.MarkRewardClaimed(currentExternal);
         QuestManager.Instance.externalQuestDatas.Remove(currentExternal);
         Destroy(gameObject);

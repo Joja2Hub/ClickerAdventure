@@ -35,6 +35,9 @@ public class ResultPanel : MonoBehaviour
         rewardsApplied = true;
         PlayerStats.Instance.AddMoney(totalGold);
         PlayerStats.Instance.AddExperience(totalExp);
+
+        if (totalGold > 0 || totalExp > 0)
+            RewardPopup.ShowReward("Battle reward", totalGold, totalExp);
     }
 
     public void ReturnToMap()
