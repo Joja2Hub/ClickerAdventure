@@ -11,6 +11,8 @@ public class QuestReceiver : MonoBehaviour
     private FirebaseFirestore db;
     private ListenerRegistration listener;
     private ParentReviewRuntimeOverlay parentReviewOverlay;
+    private readonly Dictionary<string, string> knownTaskStates = new Dictionary<string, string>();
+    private bool receivedInitialSnapshot;
 
     [SerializeField] private string userId = "id1";
     [SerializeField] private string realWorldTasksCollection = "realWorldTasks";
@@ -197,11 +199,15 @@ public class QuestReceiver : MonoBehaviour
                 foreach (var doc in snapshot.Documents)
                 {
                     ExternalQuestData external = CreateExternalQuest(doc);
+                    TrackTaskNotification(external);
+
                     if (external.isClaimed || external.status == RealWorldTaskStatus.Claimed || external.status == RealWorldTaskStatus.Cancelled)
                         continue;
 
                     QuestManager.Instance.externalQuestDatas.Add(external);
                 }
+
+                receivedInitialSnapshot = true;
 
                 var panel = FindFirstObjectByType<ActiveQuestsPanel>();
                 if (panel != null && panel.isActiveAndEnabled)
@@ -209,6 +215,72 @@ public class QuestReceiver : MonoBehaviour
 
                 OnRealWorldTasksChanged?.Invoke();
             });
+    }
+
+    private void TrackTaskNotification(ExternalQuestData task)
+    {
+        if (task == null || string.IsNullOrEmpty(task.externalId))
+            return;
+
+        string currentState = BuildNotificationState(task);
+        if (!knownTaskStates.TryGetValue(task.externalId, out string previousState))
+        {
+            knownTaskStates[task.externalId] = currentState;
+
+            if (receivedInitialSnapshot && task.status == RealWorldTaskStatus.Assigned)
+            {
+                RealWorldTaskNotificationToast.Show(
+                    "New real-life task",
+                    $"{task.questName}\nReward: {task.rewardGold} gold / {task.rewardXP} XP",
+                    new Color(0.1f, 0.32f, 0.42f, 0.96f));
+            }
+
+            return;
+        }
+
+        if (previousState == currentState)
+            return;
+
+        knownTaskStates[task.externalId] = currentState;
+        ShowTaskStateNotification(task);
+    }
+
+    private string BuildNotificationState(ExternalQuestData task)
+    {
+        return $"{task.status}|{task.parentNote}|{task.rewardGold}|{task.rewardXP}";
+    }
+
+    private void ShowTaskStateNotification(ExternalQuestData task)
+    {
+        switch (task.status)
+        {
+            case RealWorldTaskStatus.Approved:
+                RealWorldTaskNotificationToast.Show(
+                    "Task approved",
+                    BuildParentFeedbackMessage(task, "Reward is ready to claim"),
+                    new Color(0.1f, 0.38f, 0.2f, 0.96f));
+                break;
+
+            case RealWorldTaskStatus.Rejected:
+                RealWorldTaskNotificationToast.Show(
+                    "Try again",
+                    BuildParentFeedbackMessage(task, "Parent asked for another try"),
+                    new Color(0.48f, 0.16f, 0.13f, 0.96f));
+                break;
+
+            case RealWorldTaskStatus.Cancelled:
+                RealWorldTaskNotificationToast.Show(
+                    "Task cancelled",
+                    BuildParentFeedbackMessage(task, "This task was removed"),
+                    new Color(0.24f, 0.25f, 0.3f, 0.96f));
+                break;
+        }
+    }
+
+    private string BuildParentFeedbackMessage(ExternalQuestData task, string fallback)
+    {
+        string note = string.IsNullOrWhiteSpace(task.parentNote) ? fallback : task.parentNote;
+        return $"{task.questName}\n{note}";
     }
 
     private void OnDestroy()

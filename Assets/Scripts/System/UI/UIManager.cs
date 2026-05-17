@@ -15,6 +15,7 @@ public class UIManager : MonoBehaviour
 
     private PlayerStats subscribedStats;
     private UpgradeShopRuntimeOverlay shopOverlay;
+    private ChildTaskStatusOverlay childTaskStatusOverlay;
 
     private void Start()
     {
@@ -25,6 +26,7 @@ public class UIManager : MonoBehaviour
         blocker.SetActive(false);
         SubscribeToStats();
         SetupRuntimeShop();
+        SetupChildTaskStatusOverlay();
     }
 
     private void OnDestroy()
@@ -97,6 +99,12 @@ public class UIManager : MonoBehaviour
     {
         shopOverlay = gameObject.AddComponent<UpgradeShopRuntimeOverlay>();
         shopOverlay.Initialize();
+    }
+
+    private void SetupChildTaskStatusOverlay()
+    {
+        childTaskStatusOverlay = gameObject.AddComponent<ChildTaskStatusOverlay>();
+        childTaskStatusOverlay.Initialize(this);
     }
 
     private void UnsubscribeFromStats()

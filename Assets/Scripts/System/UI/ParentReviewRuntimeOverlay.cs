@@ -109,6 +109,13 @@ public class ParentReviewRuntimeOverlay : MonoBehaviour
 
         Button closeButton = CreateButton(header.transform, "Close", new Color(0.28f, 0.11f, 0.12f, 1f), new Vector2(130f, 48f));
         closeButton.onClick.AddListener(() => panel.SetActive(false));
+
+        Button lockButton = CreateButton(header.transform, "Lock", new Color(0.2f, 0.21f, 0.27f, 1f), new Vector2(130f, 48f));
+        lockButton.onClick.AddListener(() =>
+        {
+            ParentAccessGatePopup.LockSession();
+            panel.SetActive(false);
+        });
     }
 
     private void BuildQuickAssign(Transform parent)
@@ -222,9 +229,19 @@ public class ParentReviewRuntimeOverlay : MonoBehaviour
 
     private void TogglePanel()
     {
-        panel.SetActive(!panel.activeSelf);
         if (panel.activeSelf)
-            Refresh();
+        {
+            panel.SetActive(false);
+            return;
+        }
+
+        ParentAccessGatePopup.RequestAccess(OpenPanel);
+    }
+
+    private void OpenPanel()
+    {
+        panel.SetActive(true);
+        Refresh();
     }
 
     private void CreateTaskFromTemplate(ParentTaskTemplate template)
