@@ -1,16 +1,18 @@
-using System.Collections.Generic;
+п»їusing System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class QuestPanel : MonoBehaviour
 {
-    public GameObject questPrefab; // Префаб кнопки квеста
-    public Transform questListParent;    // Родитель для кнопок
+    public GameObject questPrefab;
+    public Transform questListParent;
 
     public List<QuestData> availableQuests = new List<QuestData>();
 
     private void Start()
     {
+        if (QuestManager.Instance != null)
+            QuestManager.Instance.RegisterAvailableQuests(availableQuests);
+
         RefreshQuestList();
     }
 
@@ -23,23 +25,18 @@ public class QuestPanel : MonoBehaviour
 
         foreach (var quest in availableQuests)
         {
-            if (!QuestManager.Instance.activeQuests.Contains(quest))
-            {
-                GameObject buttonGO = Instantiate(questPrefab, questListParent);
-                QuestUIItem questUI = buttonGO.GetComponent<QuestUIItem>();
-                QuestData questCopy = quest; // для замыкания
+            if (QuestManager.Instance.IsQuestUnavailable(quest))
+                continue;
 
-                questUI.Setup(questCopy, AcceptQuest);
-            }
+            GameObject buttonGO = Instantiate(questPrefab, questListParent);
+            QuestUIItem questUI = buttonGO.GetComponent<QuestUIItem>();
+            questUI.Setup(quest, AcceptQuest);
         }
     }
-
 
     public void AcceptQuest(QuestData quest)
     {
         QuestManager.Instance.AcceptQuest(quest);
-        availableQuests.Remove(quest);
-        RefreshQuestList(); // Обновляем панель
-        // Можно вызвать обновление UI активных квестов тут
+        RefreshQuestList();
     }
 }

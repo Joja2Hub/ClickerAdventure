@@ -1,4 +1,4 @@
-using UnityEngine;
+п»їusing UnityEngine;
 
 [CreateAssetMenu(fileName = "New Quest", menuName = "Quests/Quest")]
 public class QuestData : ScriptableObject
@@ -9,19 +9,22 @@ public class QuestData : ScriptableObject
     public int rewardXP;
     public int hardReward;
 
-    // Цели внутриигрового квеста
     public QuestObjective[] objectives;
 
     public bool CheckReady()
     {
+        if (QuestManager.Instance != null)
+            return QuestManager.Instance.IsQuestReady(this);
+
+        if (objectives == null || objectives.Length == 0)
+            return false;
+
         foreach (var objective in objectives)
         {
-            if (!objective.isCompleted)
-            {
+            if (objective == null || !objective.isCompleted)
                 return false;
-            }
         }
-        Debug.Log("Квест завершен: " + questName);
+
         return true;
     }
 }

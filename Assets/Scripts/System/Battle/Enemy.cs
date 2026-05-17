@@ -1,6 +1,5 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class Enemy : MonoBehaviour
 {
@@ -9,7 +8,7 @@ public class Enemy : MonoBehaviour
     private int currentHealth;
     private Coroutine attackCoroutine;
 
-    SpriteRenderer enemySprite => GetComponent<SpriteRenderer>();
+    private SpriteRenderer enemySprite => GetComponent<SpriteRenderer>();
 
     public delegate void EnemyDefeatedHandler(EnemyData data);
     public event EnemyDefeatedHandler OnDefeated;
@@ -21,7 +20,6 @@ public class Enemy : MonoBehaviour
 
         attackCoroutine = StartCoroutine(AttackPlayer());
     }
-
 
     private void OnMouseDown()
     {
@@ -51,16 +49,8 @@ public class Enemy : MonoBehaviour
         if (attackCoroutine != null)
             StopCoroutine(attackCoroutine);
 
-        foreach (var quest in QuestManager.Instance.activeQuests)
-        {
-            foreach (var obj in quest.objectives)
-            {
-                if (obj is KillEnemyObjective killObj)
-                {
-                    killObj.OnEnemyKilled();
-                }
-            }
-        }
+        if (QuestManager.Instance != null)
+            QuestManager.Instance.RegisterEnemyKilled(enemyData);
 
         OnDefeated?.Invoke(enemyData);
         Destroy(gameObject);

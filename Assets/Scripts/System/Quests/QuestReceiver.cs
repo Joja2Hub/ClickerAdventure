@@ -1,5 +1,4 @@
-using Firebase.Firestore;
-using System.Collections.Generic;
+п»їusing Firebase.Firestore;
 using UnityEngine;
 
 public class QuestReceiver : MonoBehaviour
@@ -7,7 +6,7 @@ public class QuestReceiver : MonoBehaviour
     private FirebaseFirestore db;
     private ListenerRegistration listener;
 
-    [SerializeField] private string userId = "id1"; // Можно задавать в инспекторе
+    [SerializeField] private string userId = "id1";
 
     private void Start()
     {
@@ -20,9 +19,11 @@ public class QuestReceiver : MonoBehaviour
         listener = db.Collection("users").Document(userId).Collection("quests")
             .Listen(snapshot =>
             {
-                Debug.Log("Изменения в квестах получены от Firebase");
+                Debug.Log("Quest changes received from Firebase.");
 
-                // Очистка текущего списка
+                if (QuestManager.Instance == null)
+                    return;
+
                 QuestManager.Instance.externalQuestDatas.Clear();
 
                 foreach (var doc in snapshot.Documents)
@@ -48,17 +49,14 @@ public class QuestReceiver : MonoBehaviour
                     QuestManager.Instance.externalQuestDatas.Add(external);
                 }
 
-                // Автообновление UI панели, если она существует
-                var panel = FindObjectOfType<ActiveQuestsPanel>();
+                var panel = FindFirstObjectByType<ActiveQuestsPanel>();
                 if (panel != null && panel.isActiveAndEnabled)
-                {
-                    panel.RefreshActiveQuests(); 
-                }
+                    panel.RefreshActiveQuests();
             });
     }
 
     private void OnDestroy()
     {
-        listener?.Stop(); 
+        listener?.Stop();
     }
 }

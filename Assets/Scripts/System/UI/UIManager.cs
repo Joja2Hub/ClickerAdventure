@@ -1,4 +1,4 @@
-using TMPro;
+п»їusing TMPro;
 using UnityEngine;
 
 public class UIManager : MonoBehaviour
@@ -10,45 +10,25 @@ public class UIManager : MonoBehaviour
     public GameObject questPanel;
     public GameObject blocker;
 
-
     public TextMeshProUGUI moneyText;
     public TextMeshProUGUI levelText;
 
-    private void Awake()
-    {
-        
-    }
+    private PlayerStats subscribedStats;
 
     private void Start()
     {
-        MapController.Instance.gameObject.SetActive(true);
+        if (MapController.Instance != null)
+            MapController.Instance.gameObject.SetActive(true);
+
         HideAllPanels();
         blocker.SetActive(false);
-
-        // Подписка на события
-        var stats = PlayerStats.Instance;
-        stats.OnMoneyChanged += UpdateMoney;
-        stats.OnLevelChanged += UpdateLevel;
-
-
-        // Инициализация начального значения
-        UpdateMoney(stats.money);
-        UpdateLevel(stats.level);
-
+        SubscribeToStats();
     }
 
-
-
-    private void UpdateMoney(int newMoney)
+    private void OnDestroy()
     {
-        moneyText.text = $" {newMoney}";
+        UnsubscribeFromStats();
     }
-
-    private void UpdateLevel(int newLevel)
-    {
-        levelText.text = $"{newLevel}";
-    }
-
 
     public void ShowSettingsPanel()
     {
@@ -65,7 +45,6 @@ public class UIManager : MonoBehaviour
         ShowPanel(inventoryPanel);
     }
 
-
     public void ShowLevelPanel()
     {
         ShowPanel(levelPanel);
@@ -74,16 +53,6 @@ public class UIManager : MonoBehaviour
     public void ShowQuestPanel()
     {
         ShowPanel(questPanel);
-    }
-
-    private void ShowPanel(GameObject panel)
-    {
-        HideAllPanels();
-        panel.SetActive(true);
-        blocker.SetActive(true);
-
-        // Отключаем перемещение карты через синглтон MapController
-        MapController.Instance.EnableMovement(false);
     }
 
     public void HideAllPanels()
@@ -95,7 +64,50 @@ public class UIManager : MonoBehaviour
         levelPanel.SetActive(false);
         blocker.SetActive(false);
 
-        // Включаем перемещение карты через синглтон MapController
-        MapController.Instance.EnableMovement(true);
+        if (MapController.Instance != null)
+            MapController.Instance.EnableMovement(true);
+    }
+
+    private void ShowPanel(GameObject panel)
+    {
+        HideAllPanels();
+        panel.SetActive(true);
+        blocker.SetActive(true);
+
+        if (MapController.Instance != null)
+            MapController.Instance.EnableMovement(false);
+    }
+
+    private void SubscribeToStats()
+    {
+        subscribedStats = PlayerStats.Instance;
+        if (subscribedStats == null)
+            return;
+
+        subscribedStats.OnMoneyChanged += UpdateMoney;
+        subscribedStats.OnLevelChanged += UpdateLevel;
+
+        UpdateMoney(subscribedStats.money);
+        UpdateLevel(subscribedStats.level);
+    }
+
+    private void UnsubscribeFromStats()
+    {
+        if (subscribedStats == null)
+            return;
+
+        subscribedStats.OnMoneyChanged -= UpdateMoney;
+        subscribedStats.OnLevelChanged -= UpdateLevel;
+        subscribedStats = null;
+    }
+
+    private void UpdateMoney(int newMoney)
+    {
+        moneyText.text = $" {newMoney}";
+    }
+
+    private void UpdateLevel(int newLevel)
+    {
+        levelText.text = $"{newLevel}";
     }
 }

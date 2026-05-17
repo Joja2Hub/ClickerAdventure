@@ -1,9 +1,10 @@
+п»їusing System;
 using UnityEngine;
-using System; // Для Action
 
 public class PlayerStats : MonoBehaviour
 {
     public static PlayerStats Instance;
+    private const string SaveKey = "PlayerStats";
 
     public int level = 1;
     public int currentExperience = 0;
@@ -14,10 +15,9 @@ public class PlayerStats : MonoBehaviour
     public int maxHealth = 100;
     public int currentDmg = 1;
 
-    // События
     public event Action<int> OnMoneyChanged;
     public event Action<int> OnLevelChanged;
-    public event Action<int, int> OnExperienceChanged; // (текущий, до следующего)
+    public event Action<int, int> OnExperienceChanged;
     public event Action<int, int> OnHealthChanged;
 
     private void Awake()
@@ -26,6 +26,7 @@ public class PlayerStats : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
+            Load();
         }
         else
         {
@@ -37,12 +38,15 @@ public class PlayerStats : MonoBehaviour
     {
         money += amount;
         OnMoneyChanged?.Invoke(money);
+        Save();
     }
 
     public void IncreaseLevel()
     {
         level++;
+        CalculateExperienceForNextLevel();
         OnLevelChanged?.Invoke(level);
+        Save();
     }
 
     public void AddExperience(int amount)
@@ -54,6 +58,7 @@ public class PlayerStats : MonoBehaviour
         }
 
         OnExperienceChanged?.Invoke(currentExperience, experienceToNextLevel);
+        Save();
     }
 
     private void LevelUp()
@@ -74,15 +79,66 @@ public class PlayerStats : MonoBehaviour
 
     public void TakeDamage(int damage)
     {
-        currentHealth -= damage;
+        currentHealth = Mathf.Max(0, currentHealth - damage);
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
-
-        if (currentHealth <= 0)
-        {
-            currentHealth = 0;
-            OnHealthChanged?.Invoke(currentHealth, maxHealth);
-        }
+        Save();
     }
 
+    public void SetHealth(int value)
+    {
+        currentHealth = Mathf.Clamp(value, 0, maxHealth);
+        OnHealthChanged?.Invoke(currentHealth, maxHealth);
+        Save();
+    }
 
+    public void HealToFull()
+    {
+        SetHealth(maxHealth);
+    }
+
+    public void Save()
+    {
+        var saveData = new PlayerStatsSaveData
+        {
+            level = level,
+            currentExperience = currentExperience,
+            experienceToNextLevel = experienceToNextLevel,
+            money = money,
+            currentHealth = currentHealth,
+            maxHealth = maxHealth,
+            currentDmg = currentDmg
+        };
+
+        PlayerPrefs.SetString(SaveKey, JsonUtility.ToJson(saveData));
+        PlayerPrefs.Save();
+    }
+
+    private void Load()
+    {
+        if (!PlayerPrefs.HasKey(SaveKey))
+            return;
+
+        var saveData = JsonUtility.FromJson<PlayerStatsSaveData>(PlayerPrefs.GetString(SaveKey));
+        if (saveData == null)
+            return;
+
+        level = saveData.level;
+        currentExperience = saveData.currentExperience;
+        experienceToNextLevel = saveData.experienceToNextLevel;
+        money = saveData.money;
+        currentHealth = saveData.currentHealth;
+        maxHealth = saveData.maxHealth;
+        currentDmg = saveData.currentDmg;
+    }
+
+    private void OnApplicationPause(bool pauseStatus)
+    {
+        if (pauseStatus)
+            Save();
+    }
+
+    private void OnApplicationQuit()
+    {
+        Save();
+    }
 }

@@ -1,4 +1,4 @@
-using UnityEngine;
+п»їusing UnityEngine;
 using UnityEngine.UI;
 
 public class BattleUIManager : MonoBehaviour
@@ -8,37 +8,46 @@ public class BattleUIManager : MonoBehaviour
     [Header("UI Elements")]
     public Slider healthSlider;
 
+    private PlayerStats playerStats;
+
     private void Awake()
     {
         if (Instance == null)
+        {
             Instance = this;
+        }
         else
         {
             Destroy(gameObject);
-            return;
         }
-
-
-        //Slider healthSlider = GetComponent<Slider>();
-        healthSlider.maxValue = PlayerStats.Instance.maxHealth;
     }
 
     private void Start()
     {
-        UpdateHealthUI();
+        playerStats = PlayerStats.Instance;
+        if (playerStats == null)
+            return;
+
+        healthSlider.maxValue = playerStats.maxHealth;
+        playerStats.OnHealthChanged += UpdateHealthUI;
+        UpdateHealthUI(playerStats.currentHealth, playerStats.maxHealth);
     }
 
-    private void Update()
+    private void OnDestroy()
     {
-        // Можно убрать Update и вызывать UpdateHealthUI вручную при получении урона
-        UpdateHealthUI();
+        if (playerStats != null)
+            playerStats.OnHealthChanged -= UpdateHealthUI;
+
+        if (Instance == this)
+            Instance = null;
     }
 
-    public void UpdateHealthUI()
+    private void UpdateHealthUI(int currentHealth, int maxHealth)
     {
-        if (healthSlider != null)
-        {
-            healthSlider.value = PlayerStats.Instance.currentHealth;
-        }
+        if (healthSlider == null)
+            return;
+
+        healthSlider.maxValue = maxHealth;
+        healthSlider.value = currentHealth;
     }
 }

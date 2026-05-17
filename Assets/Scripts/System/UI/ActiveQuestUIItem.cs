@@ -1,4 +1,4 @@
-using TMPro;
+п»їusing TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -18,11 +18,10 @@ public class ActiveQuestUIItem : MonoBehaviour
         isExternal = false;
         currentQuest = quest;
         questNameText.text = currentQuest.questName;
-        descriptionText.text = currentQuest.description;
-        rewardText.text = currentQuest.rewardGold.ToString();
-        readyBut.interactable = false;
+        descriptionText.text = GetProgressDescription(currentQuest);
+        rewardText.text = $"{currentQuest.rewardGold} / {currentQuest.rewardXP} XP";
 
-        UpdateQuest(quest); // На всякий случай
+        UpdateQuest(quest);
     }
 
     public void SetupExternal(ExternalQuestData quest)
@@ -31,15 +30,15 @@ public class ActiveQuestUIItem : MonoBehaviour
         currentExternal = quest;
         questNameText.text = quest.questName;
         descriptionText.text = quest.description;
-        rewardText.text = quest.rewardGold.ToString();
+        rewardText.text = $"{quest.rewardGold} / {quest.rewardXP} XP";
 
         readyBut.interactable = quest.isComplete;
     }
 
     public void UpdateQuest(QuestData quest)
     {
-        if (quest.CheckReady())
-            readyBut.interactable = true;
+        descriptionText.text = GetProgressDescription(quest);
+        readyBut.interactable = quest.CheckReady();
     }
 
     public void CompleteQuest()
@@ -48,24 +47,35 @@ public class ActiveQuestUIItem : MonoBehaviour
         {
             if (!currentExternal.isComplete)
             {
-                Debug.LogWarning("Нельзя сдать невыполненный внешний квест");
+                Debug.LogWarning("Cannot complete an unfinished external quest.");
                 return;
             }
 
             PlayerStats.Instance.AddExperience(currentExternal.rewardXP);
             PlayerStats.Instance.AddMoney(currentExternal.rewardGold);
-            //PlayerStats.Instance.AddHardCurrency(currentExternal.hardReward); // если такая есть
-
             QuestManager.Instance.externalQuestDatas.Remove(currentExternal);
         }
         else
         {
+            if (!currentQuest.CheckReady())
+            {
+                Debug.LogWarning("Cannot complete an unfinished quest.");
+                return;
+            }
+
             PlayerStats.Instance.AddExperience(currentQuest.rewardXP);
             PlayerStats.Instance.AddMoney(currentQuest.rewardGold);
-
-            QuestManager.Instance.RemoveQuest(currentQuest);
+            QuestManager.Instance.CompleteQuest(currentQuest);
         }
 
         Destroy(gameObject);
+    }
+
+    private string GetProgressDescription(QuestData quest)
+    {
+        if (QuestManager.Instance == null)
+            return quest.description;
+
+        return QuestManager.Instance.GetQuestProgressDescription(quest);
     }
 }

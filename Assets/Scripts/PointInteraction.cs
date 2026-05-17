@@ -1,99 +1,78 @@
-using UnityEngine;
-using UnityEngine.SceneManagement;
+п»їusing UnityEngine;
 using UnityEngine.EventSystems;
-
+using UnityEngine.SceneManagement;
 
 public enum PointType
 {
-    Dungeon, // Данж
-    Town     // Населённый пункт
+    Dungeon,
+    Town
 }
 
 public class PointInteraction : MonoBehaviour
 {
-    public string pointName; // Название точки
-    public int requiredLevel; // Требуемый уровень для входа
-    public PointType pointType; // Тип точки
-    public LocationData locationData; // Данные локации (для данжа)
+    public string pointName;
+    public int requiredLevel;
+    public PointType pointType;
+    public LocationData locationData;
     public TownData townData;
-
     public GameObject townUIPrefab;
-
-
-    private void Awake()
-    {
-      
-
-    }
 
     private void Update()
     {
-        // Блокируем клик, если он был по UI
-        if (EventSystem.current.IsPointerOverGameObject())
+        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
             return;
 
-        // Обработка касаний
         if (Input.touchCount > 0)
         {
             Touch touch = Input.GetTouch(0);
-
             if (touch.phase == TouchPhase.Began)
-            {
                 HandleTouch(touch.position);
-            }
         }
 
-        // Обработка кликов мыши (для тестирования в редакторе)
         if (Input.GetMouseButtonDown(0))
-        {
             HandleTouch(Input.mousePosition);
-        }
     }
-
 
     private void HandleTouch(Vector3 touchPosition)
     {
-        // Преобразуем позицию касания в мировые координаты
         Vector3 worldPosition = Camera.main.ScreenToWorldPoint(touchPosition);
         Vector2 touchWorldPosition = new Vector2(worldPosition.x, worldPosition.y);
 
-        // Проверяем, попал ли касание в коллайдер
         Collider2D hit = Physics2D.OverlapPoint(touchWorldPosition);
-        if (hit != null && hit.transform.IsChildOf(transform))
+        if (hit == null || !hit.transform.IsChildOf(transform))
+            return;
+
+        if (PlayerStats.Instance.level < requiredLevel)
         {
+            Debug.Log($"Access denied to point: {pointName}. Required level: {requiredLevel}");
+            return;
+        }
 
-            if (PlayerStats.Instance.level >= requiredLevel)
-            {
-                switch (pointType)
-                {
-                    case PointType.Dungeon:
-                        StartBattle();
-                        break;
-
-                    case PointType.Town:
-                        LoadTownScene();
-                        break;
-                }
-            }
-            else
-            {
-                Debug.Log($"Access denied to point: {pointName}. Required level: {requiredLevel}");
-            }
+        switch (pointType)
+        {
+            case PointType.Dungeon:
+                StartBattle();
+                break;
+            case PointType.Town:
+                LoadTownWindow();
+                break;
         }
     }
 
-    private void LoadTownScene()
+    private void LoadTownWindow()
     {
-        Debug.Log("Открытие");
-        townUIPrefab.gameObject.SetActive(true);
+        if (townUIPrefab == null)
+            return;
+
+        townUIPrefab.SetActive(true);
+        var townUI = townUIPrefab.GetComponent<TownUIController>();
+        if (townUI != null && townData != null)
+            townUI.Setup(townData);
     }
-
-
 
     private void StartBattle()
     {
         DungeonTransferData.LocationData = locationData;
         SceneManager.LoadScene("BattleScene");
     }
-
 }

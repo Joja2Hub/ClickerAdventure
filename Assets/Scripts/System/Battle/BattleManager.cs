@@ -1,5 +1,5 @@
+﻿using System.Collections;
 using UnityEngine;
-using System.Collections;
 
 public class BattleManager : MonoBehaviour
 {
@@ -11,20 +11,21 @@ public class BattleManager : MonoBehaviour
     private int currentWaveIndex = 0;
     private int totalGold = 0;
     private int totalExp = 0;
+    private bool battleEnded;
 
+    private PlayerStats playerStats;
     private ResultPanel resultPanel;
-
-    
-
 
     private void Start()
     {
-        var stats = PlayerStats.Instance;
-        stats.OnHealthChanged += OnPlayerHealthChanged;
+        playerStats = PlayerStats.Instance;
+        if (playerStats != null)
+            playerStats.OnHealthChanged += OnPlayerHealthChanged;
 
-        MapController.Instance.gameObject.SetActive(false);
+        if (MapController.Instance != null)
+            MapController.Instance.gameObject.SetActive(false);
+
         locationData = DungeonTransferData.LocationData;
-
         if (locationData == null)
         {
             Debug.LogError("No location data found! Make sure it was set before loading this scene.");
@@ -35,12 +36,16 @@ public class BattleManager : MonoBehaviour
         SetupBattle();
     }
 
+    private void OnDestroy()
+    {
+        if (playerStats != null)
+            playerStats.OnHealthChanged -= OnPlayerHealthChanged;
+    }
+
     private void OnPlayerHealthChanged(int currentHealth, int maxHealth)
     {
         if (currentHealth <= 0)
-        {
             Defeat();
-        }
     }
 
     private void SetupBattle()
@@ -56,6 +61,9 @@ public class BattleManager : MonoBehaviour
 
     private IEnumerator SpawnNextEnemyWithDelay()
     {
+        if (battleEnded)
+            yield break;
+
         if (currentWaveIndex >= locationData.waveCount)
         {
             EndBattle();
@@ -64,10 +72,11 @@ public class BattleManager : MonoBehaviour
 
         yield return new WaitForSeconds(2f);
 
-        GameObject enemyGO = Instantiate(
-            locationData.enemyPrefabs[Random.Range(0, locationData.enemyPrefabs.Length)],
-            enemyParent
-        );
+        if (battleEnded)
+            yield break;
+
+        var prefab = locationData.enemyPrefabs[Random.Range(0, locationData.enemyPrefabs.Length)];
+        GameObject enemyGO = enemyParent != null ? Instantiate(prefab, enemyParent) : Instantiate(prefab);
 
         Enemy enemy = enemyGO.GetComponent<Enemy>();
         enemy.Initialize();
@@ -76,6 +85,9 @@ public class BattleManager : MonoBehaviour
 
     private void OnEnemyDefeated(EnemyData data)
     {
+        if (battleEnded)
+            return;
+
         totalGold += data.GetRandomMoneyReward();
         totalExp += data.GetRandomExpReward();
 
@@ -85,6 +97,10 @@ public class BattleManager : MonoBehaviour
 
     private void EndBattle()
     {
+        if (battleEnded)
+            return;
+
+        battleEnded = true;
         Debug.Log("Battle complete!");
         resultPanelObject.SetActive(true);
         resultPanel.ShowResults(totalGold, totalExp);
@@ -92,14 +108,22 @@ public class BattleManager : MonoBehaviour
 
     public void Defeat()
     {
-        currentWaveIndex = locationData.waveCount;
+        if (battleEnded)
+            return;
 
-        Debug.Log("Battle complete!");
-        resultPanelObject.SetActive(true);
+        battleEnded = true;
+        currentWaveIndex = locationData.waveCount;
         totalExp = 0;
         totalGold = 0;
-        resultPanel.ShowResults(totalGold, totalExp);
-        PlayerStats.Instance.currentHealth = 10;
-    }
 
+        foreach (var enemy in FindObjectsByType<Enemy>(FindObjectsSortMode.None))
+            Destroy(enemy.gameObject);
+
+        Debug.Log("Battle failed.");
+        resultPanelObject.SetActive(true);
+        resultPanel.ShowResults(totalGold, totalExp);
+
+        if (PlayerStats.Instance != null)
+            PlayerStats.Instance.SetHealth(10);
+    }
 }

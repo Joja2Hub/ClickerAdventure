@@ -1,7 +1,7 @@
+п»їusing TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 using UnityEngine.SceneManagement;
-using TMPro;
+using UnityEngine.UI;
 
 public class ResultPanel : MonoBehaviour
 {
@@ -10,10 +10,17 @@ public class ResultPanel : MonoBehaviour
     public Button returnButton;
     public GameObject panel;
 
+    private bool rewardsApplied;
+
     private void Awake()
     {
-        panel.SetActive(false); // скрыть по умолчанию
+        panel.SetActive(false);
         returnButton.onClick.AddListener(ReturnToMap);
+    }
+
+    private void OnDestroy()
+    {
+        returnButton.onClick.RemoveListener(ReturnToMap);
     }
 
     public void ShowResults(int totalGold, int totalExp)
@@ -21,6 +28,11 @@ public class ResultPanel : MonoBehaviour
         goldText.text = "Gold: " + totalGold;
         expText.text = "Exp: " + totalExp;
         panel.SetActive(true);
+
+        if (rewardsApplied)
+            return;
+
+        rewardsApplied = true;
         PlayerStats.Instance.AddMoney(totalGold);
         PlayerStats.Instance.AddExperience(totalExp);
     }
