@@ -74,7 +74,9 @@ public class BattleRuntimeHUD : MonoBehaviour
             healthFill.fillAmount = healthRatio;
 
         if (comboText != null)
-            comboText.text = battleManager.ComboCount > 1 ? $"Combo x{battleManager.ComboCount}" : "Combo ready";
+            comboText.text = battleManager.ComboCount > 1
+                ? $"Combo x{battleManager.ComboCount}  |  Best x{battleManager.MaxComboCount}"
+                : $"Best x{battleManager.MaxComboCount}  |  Crits {battleManager.CriticalHits}";
 
         if (rageText != null)
             rageText.text = $"Rage {battleManager.RageCharge}%";
@@ -83,7 +85,7 @@ public class BattleRuntimeHUD : MonoBehaviour
             rageFill.fillAmount = rageRatio;
 
         if (lootText != null)
-            lootText.text = $"{battleManager.TotalGold} gold  |  {battleManager.TotalExp} XP";
+            lootText.text = $"{battleManager.TotalGold} gold  |  {battleManager.TotalExp} XP  |  Taken {battleManager.DamageTaken}";
     }
 
     private void CastPower()

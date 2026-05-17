@@ -11,10 +11,19 @@ public class UpgradeShopRuntimeOverlay : MonoBehaviour
     private TextMeshProUGUI moneyText;
     private TextMeshProUGUI damageText;
     private TextMeshProUGUI healthText;
+    private TextMeshProUGUI critText;
+    private TextMeshProUGUI rageText;
+    private TextMeshProUGUI lootText;
     private TextMeshProUGUI damageCostText;
     private TextMeshProUGUI healthCostText;
+    private TextMeshProUGUI critCostText;
+    private TextMeshProUGUI rageCostText;
+    private TextMeshProUGUI lootCostText;
     private Button damageButton;
     private Button healthButton;
+    private Button critButton;
+    private Button rageButton;
+    private Button lootButton;
 
     public void Initialize()
     {
@@ -96,6 +105,54 @@ public class UpgradeShopRuntimeOverlay : MonoBehaviour
         }
     }
 
+    private void BuyCrit()
+    {
+        if (playerStats == null)
+            return;
+
+        if (playerStats.UpgradeCrit())
+        {
+            RewardPopup.ShowMessage("Upgrade purchased", $"+ Critical chance\nCrit bonus: {FormatPercent(playerStats.CriticalChanceBonus)}");
+            Refresh();
+        }
+        else
+        {
+            RewardPopup.ShowMessage("Need more gold", $"Precision costs {playerStats.GetCritUpgradeCost()}");
+        }
+    }
+
+    private void BuyRage()
+    {
+        if (playerStats == null)
+            return;
+
+        if (playerStats.UpgradeRageGain())
+        {
+            RewardPopup.ShowMessage("Upgrade purchased", $"+ Rage gain\nRage: {FormatPercent(playerStats.RageGainMultiplier - 1f)} faster");
+            Refresh();
+        }
+        else
+        {
+            RewardPopup.ShowMessage("Need more gold", $"Focus costs {playerStats.GetRageUpgradeCost()}");
+        }
+    }
+
+    private void BuyLoot()
+    {
+        if (playerStats == null)
+            return;
+
+        if (playerStats.UpgradeLoot())
+        {
+            RewardPopup.ShowMessage("Upgrade purchased", $"+ Battle gold\nLoot: {FormatPercent(playerStats.BattleGoldMultiplier - 1f)} bonus");
+            Refresh();
+        }
+        else
+        {
+            RewardPopup.ShowMessage("Need more gold", $"Treasure sense costs {playerStats.GetLootUpgradeCost()}");
+        }
+    }
+
     private void Refresh()
     {
         if (playerStats == null)
@@ -106,15 +163,27 @@ public class UpgradeShopRuntimeOverlay : MonoBehaviour
 
         int damageCost = playerStats.GetDamageUpgradeCost();
         int healthCost = playerStats.GetHealthUpgradeCost();
+        int critCost = playerStats.GetCritUpgradeCost();
+        int rageCost = playerStats.GetRageUpgradeCost();
+        int lootCost = playerStats.GetLootUpgradeCost();
 
         moneyText.text = $"{playerStats.money} gold";
         damageText.text = $"Damage {playerStats.currentDmg}  Lv.{playerStats.damageUpgradeLevel}";
         healthText.text = $"HP {playerStats.currentHealth}/{playerStats.maxHealth}  Lv.{playerStats.healthUpgradeLevel}";
+        critText.text = $"Crit +{FormatPercent(playerStats.CriticalChanceBonus)}  Lv.{playerStats.critUpgradeLevel}";
+        rageText.text = $"Rage +{FormatPercent(playerStats.RageGainMultiplier - 1f)}  Lv.{playerStats.rageUpgradeLevel}";
+        lootText.text = $"Battle gold +{FormatPercent(playerStats.BattleGoldMultiplier - 1f)}  Lv.{playerStats.lootUpgradeLevel}";
         damageCostText.text = $"{damageCost} gold";
         healthCostText.text = $"{healthCost} gold";
+        critCostText.text = $"{critCost} gold";
+        rageCostText.text = $"{rageCost} gold";
+        lootCostText.text = $"{lootCost} gold";
 
         damageButton.interactable = playerStats.money >= damageCost;
         healthButton.interactable = playerStats.money >= healthCost;
+        critButton.interactable = playerStats.money >= critCost;
+        rageButton.interactable = playerStats.money >= rageCost;
+        lootButton.interactable = playerStats.money >= lootCost;
     }
 
     private void ShowPanel()
@@ -188,7 +257,7 @@ public class UpgradeShopRuntimeOverlay : MonoBehaviour
         panelRect.anchorMin = new Vector2(0.5f, 0.5f);
         panelRect.anchorMax = new Vector2(0.5f, 0.5f);
         panelRect.pivot = new Vector2(0.5f, 0.5f);
-        panelRect.sizeDelta = new Vector2(760f, 680f);
+        panelRect.sizeDelta = new Vector2(780f, 980f);
 
         Button panelButton = panel.AddComponent<Button>();
         panelButton.transition = Selectable.Transition.None;
@@ -213,6 +282,15 @@ public class UpgradeShopRuntimeOverlay : MonoBehaviour
         CreateUpgradeRow(panel.transform, "HealthTraining", "Fortify health", new Color(0.12f, 0.34f, 0.21f, 0.95f), out healthText, out healthCostText, out healthButton);
         healthButton.onClick.AddListener(BuyHealth);
 
+        CreateUpgradeRow(panel.transform, "PrecisionTraining", "Precision", new Color(0.42f, 0.2f, 0.5f, 0.95f), out critText, out critCostText, out critButton);
+        critButton.onClick.AddListener(BuyCrit);
+
+        CreateUpgradeRow(panel.transform, "FocusTraining", "Battle focus", new Color(0.62f, 0.22f, 0.08f, 0.95f), out rageText, out rageCostText, out rageButton);
+        rageButton.onClick.AddListener(BuyRage);
+
+        CreateUpgradeRow(panel.transform, "LootTraining", "Treasure sense", new Color(0.36f, 0.29f, 0.1f, 0.95f), out lootText, out lootCostText, out lootButton);
+        lootButton.onClick.AddListener(BuyLoot);
+
         CreateDivider(panel.transform);
 
         Button closeButton = CreateButton(panel.transform, "CloseButton", "Close", new Color(0.19f, 0.2f, 0.24f, 1f), out _);
@@ -223,7 +301,7 @@ public class UpgradeShopRuntimeOverlay : MonoBehaviour
     {
         GameObject row = CreateColoredObject(parent, name, new Color(0.12f, 0.13f, 0.16f, 1f));
         LayoutElement rowElement = row.AddComponent<LayoutElement>();
-        rowElement.preferredHeight = 150f;
+        rowElement.preferredHeight = 118f;
 
         HorizontalLayoutGroup rowLayout = row.AddComponent<HorizontalLayoutGroup>();
         rowLayout.padding = new RectOffset(26, 20, 18, 18);
@@ -254,7 +332,7 @@ public class UpgradeShopRuntimeOverlay : MonoBehaviour
         buyButton = CreateButton(row.transform, "BuyButton", "Buy", buttonColor, out costText);
         LayoutElement buttonElement = buyButton.gameObject.AddComponent<LayoutElement>();
         buttonElement.preferredWidth = 210f;
-        buttonElement.preferredHeight = 92f;
+        buttonElement.preferredHeight = 78f;
     }
 
     private Button CreateButton(Transform parent, string name, string label, Color color, out TextMeshProUGUI labelText)
@@ -275,6 +353,11 @@ public class UpgradeShopRuntimeOverlay : MonoBehaviour
         GameObject divider = CreateColoredObject(parent, "Divider", new Color(1f, 1f, 1f, 0.12f));
         LayoutElement element = divider.AddComponent<LayoutElement>();
         element.preferredHeight = 2f;
+    }
+
+    private string FormatPercent(float value)
+    {
+        return $"{Mathf.RoundToInt(value * 100f)}%";
     }
 
     private GameObject CreateColoredObject(Transform parent, string name, Color color)

@@ -25,6 +25,11 @@ public class ResultPanel : MonoBehaviour
 
     public void ShowResults(int totalGold, int totalExp)
     {
+        ShowResults(totalGold, totalExp, default);
+    }
+
+    public void ShowResults(int totalGold, int totalExp, BattlePerformanceResult performance)
+    {
         goldText.text = "Gold: " + totalGold;
         expText.text = "Exp: " + totalExp;
         panel.SetActive(true);
@@ -36,8 +41,18 @@ public class ResultPanel : MonoBehaviour
         PlayerStats.Instance.AddMoney(totalGold);
         PlayerStats.Instance.AddExperience(totalExp);
 
-        if (totalGold > 0 || totalExp > 0)
-            RewardPopup.ShowReward("Battle reward", totalGold, totalExp);
+        if (totalGold <= 0 && totalExp <= 0)
+            return;
+
+        if (performance.HasBonus)
+        {
+            RewardPopup.ShowMessage(
+                $"Battle reward  Rank {performance.Rank}",
+                $"+{totalGold} gold\n+{totalExp} XP\nBonus: +{performance.BonusGold} gold / +{performance.BonusExperience} XP\nBest combo x{performance.MaxCombo}  Crits {performance.CriticalHits}");
+            return;
+        }
+
+        RewardPopup.ShowReward("Battle reward", totalGold, totalExp);
     }
 
     public void ReturnToMap()

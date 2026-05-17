@@ -96,13 +96,20 @@ public class ActiveQuestUIItem : MonoBehaviour
         }
 
         DailyRoutineRewardResult routineReward = DailyRoutineProgress.Instance.RecordRealTaskClaim();
-        int totalGold = currentExternal.rewardGold + routineReward.BonusGold;
-        int totalExperience = currentExternal.rewardXP + routineReward.BonusExperience;
+        AchievementRewardResult achievementReward = AchievementProgress.Instance.RecordRealTaskClaim(routineReward);
+        int totalGold = currentExternal.rewardGold + routineReward.BonusGold + achievementReward.BonusGold;
+        int totalExperience = currentExternal.rewardXP + routineReward.BonusExperience + achievementReward.BonusExperience;
 
         PlayerStats.Instance.AddExperience(totalExperience);
         PlayerStats.Instance.AddMoney(totalGold);
 
-        if (routineReward.HasBonus)
+        if (achievementReward.HasReward)
+        {
+            RewardPopup.ShowMessage(
+                achievementReward.Title,
+                $"+{totalGold} gold\n+{totalExperience} XP\n{achievementReward.Description}\n{achievementReward.UnlockedCount}/{achievementReward.TotalAchievements} achievements");
+        }
+        else if (routineReward.HasBonus)
         {
             RewardPopup.ShowMessage(
                 "Daily goal complete",

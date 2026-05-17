@@ -31,7 +31,7 @@ public class DailyRoutineProgress : MonoBehaviour
         }
     }
 
-    public int DailyGoal => Mathf.Max(1, dailyGoal);
+    public int DailyGoal => Mathf.Max(1, saveData.dailyGoal > 0 ? saveData.dailyGoal : dailyGoal);
     public int CompletedToday => saveData.completedToday;
     public int CurrentStreak => saveData.currentStreak;
     public bool HasClaimedGoalBonusToday => saveData.claimedGoalBonus;
@@ -84,6 +84,13 @@ public class DailyRoutineProgress : MonoBehaviour
             completedDailyGoal);
     }
 
+    public void SetDailyGoal(int goal)
+    {
+        saveData.dailyGoal = Mathf.Clamp(goal, 1, 12);
+        Save();
+        OnProgressChanged?.Invoke();
+    }
+
     public void ResetForCurrentDayIfNeeded()
     {
         string today = GetTodayKey();
@@ -119,6 +126,7 @@ public class DailyRoutineProgress : MonoBehaviour
         if (!PlayerPrefs.HasKey(SaveKey))
         {
             saveData.currentDate = GetTodayKey();
+            saveData.dailyGoal = DefaultDailyGoal;
             return;
         }
 
@@ -128,6 +136,9 @@ public class DailyRoutineProgress : MonoBehaviour
 
         if (string.IsNullOrEmpty(saveData.currentDate))
             saveData.currentDate = GetTodayKey();
+
+        if (saveData.dailyGoal <= 0)
+            saveData.dailyGoal = DefaultDailyGoal;
     }
 
     private void Save()
@@ -178,5 +189,6 @@ public class DailyRoutineSaveData
     public string lastCompletionDate;
     public int completedToday;
     public int currentStreak;
+    public int dailyGoal = 3;
     public bool claimedGoalBonus;
 }

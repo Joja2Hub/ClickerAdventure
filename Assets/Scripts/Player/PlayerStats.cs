@@ -16,12 +16,19 @@ public class PlayerStats : MonoBehaviour
     public int currentDmg = 1;
     public int damageUpgradeLevel = 0;
     public int healthUpgradeLevel = 0;
+    public int critUpgradeLevel = 0;
+    public int rageUpgradeLevel = 0;
+    public int lootUpgradeLevel = 0;
 
     public event Action<int> OnMoneyChanged;
     public event Action<int> OnLevelChanged;
     public event Action<int, int> OnExperienceChanged;
     public event Action<int, int> OnHealthChanged;
     public event Action OnStatsChanged;
+
+    public float CriticalChanceBonus => Mathf.Min(0.22f, critUpgradeLevel * 0.018f);
+    public float RageGainMultiplier => 1f + Mathf.Min(0.9f, rageUpgradeLevel * 0.08f);
+    public float BattleGoldMultiplier => 1f + Mathf.Min(1f, lootUpgradeLevel * 0.09f);
 
     private void Awake()
     {
@@ -123,6 +130,21 @@ public class PlayerStats : MonoBehaviour
         return Mathf.RoundToInt(70 * Mathf.Pow(1.35f, healthUpgradeLevel));
     }
 
+    public int GetCritUpgradeCost()
+    {
+        return Mathf.RoundToInt(90 * Mathf.Pow(1.42f, critUpgradeLevel));
+    }
+
+    public int GetRageUpgradeCost()
+    {
+        return Mathf.RoundToInt(95 * Mathf.Pow(1.4f, rageUpgradeLevel));
+    }
+
+    public int GetLootUpgradeCost()
+    {
+        return Mathf.RoundToInt(85 * Mathf.Pow(1.38f, lootUpgradeLevel));
+    }
+
     public bool UpgradeDamage()
     {
         int cost = GetDamageUpgradeCost();
@@ -151,6 +173,42 @@ public class PlayerStats : MonoBehaviour
         return true;
     }
 
+    public bool UpgradeCrit()
+    {
+        int cost = GetCritUpgradeCost();
+        if (!TrySpendMoney(cost))
+            return false;
+
+        critUpgradeLevel++;
+        OnStatsChanged?.Invoke();
+        Save();
+        return true;
+    }
+
+    public bool UpgradeRageGain()
+    {
+        int cost = GetRageUpgradeCost();
+        if (!TrySpendMoney(cost))
+            return false;
+
+        rageUpgradeLevel++;
+        OnStatsChanged?.Invoke();
+        Save();
+        return true;
+    }
+
+    public bool UpgradeLoot()
+    {
+        int cost = GetLootUpgradeCost();
+        if (!TrySpendMoney(cost))
+            return false;
+
+        lootUpgradeLevel++;
+        OnStatsChanged?.Invoke();
+        Save();
+        return true;
+    }
+
     public void Save()
     {
         var saveData = new PlayerStatsSaveData
@@ -163,7 +221,10 @@ public class PlayerStats : MonoBehaviour
             maxHealth = maxHealth,
             currentDmg = currentDmg,
             damageUpgradeLevel = damageUpgradeLevel,
-            healthUpgradeLevel = healthUpgradeLevel
+            healthUpgradeLevel = healthUpgradeLevel,
+            critUpgradeLevel = critUpgradeLevel,
+            rageUpgradeLevel = rageUpgradeLevel,
+            lootUpgradeLevel = lootUpgradeLevel
         };
 
         PlayerPrefs.SetString(SaveKey, JsonUtility.ToJson(saveData));
@@ -188,6 +249,9 @@ public class PlayerStats : MonoBehaviour
         currentDmg = saveData.currentDmg;
         damageUpgradeLevel = saveData.damageUpgradeLevel;
         healthUpgradeLevel = saveData.healthUpgradeLevel;
+        critUpgradeLevel = saveData.critUpgradeLevel;
+        rageUpgradeLevel = saveData.rageUpgradeLevel;
+        lootUpgradeLevel = saveData.lootUpgradeLevel;
     }
 
     private void OnApplicationPause(bool pauseStatus)

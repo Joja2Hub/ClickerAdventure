@@ -21,6 +21,7 @@ public class ParentReviewRuntimeOverlay : MonoBehaviour
     private Transform listParent;
     private TextMeshProUGUI emptyText;
     private TextMeshProUGUI statusText;
+    private TMP_InputField dailyGoalInput;
     private TMP_InputField customTitleInput;
     private TMP_InputField customDescriptionInput;
     private TMP_InputField customGoldInput;
@@ -67,7 +68,7 @@ public class ParentReviewRuntimeOverlay : MonoBehaviour
         panelRect.anchorMin = new Vector2(0.5f, 0.5f);
         panelRect.anchorMax = new Vector2(0.5f, 0.5f);
         panelRect.pivot = new Vector2(0.5f, 0.5f);
-        panelRect.sizeDelta = new Vector2(980f, 1040f);
+        panelRect.sizeDelta = new Vector2(980f, 1160f);
         panelRect.anchoredPosition = Vector2.zero;
         panel.SetActive(false);
 
@@ -81,6 +82,7 @@ public class ParentReviewRuntimeOverlay : MonoBehaviour
 
         BuildHeader(panel.transform);
         BuildQuickAssign(panel.transform);
+        BuildRoutineSettings(panel.transform);
         BuildCustomAssign(panel.transform);
 
         statusText = CreateText(panel.transform, "Active: 0  |  Waiting: 0  |  Approved: 0", 21, FontStyles.Bold, TextAlignmentOptions.Left);
@@ -147,6 +149,49 @@ public class ParentReviewRuntimeOverlay : MonoBehaviour
             Button button = CreateButton(buttonRow.transform, $"{template.Title}\n+{template.Gold}g +{template.Experience}xp", new Color(0.1f, 0.32f, 0.42f, 1f), new Vector2(206f, 92f), 18);
             button.onClick.AddListener(() => CreateTaskFromTemplate(template));
         }
+    }
+
+    private void BuildRoutineSettings(Transform parent)
+    {
+        GameObject section = CreatePanel(parent, "RoutineSettings", new Color(0.1f, 0.14f, 0.17f, 1f));
+        AddLayoutElement(section, 0f, 112f, 1f);
+
+        HorizontalLayoutGroup sectionLayout = section.AddComponent<HorizontalLayoutGroup>();
+        sectionLayout.padding = new RectOffset(18, 18, 14, 14);
+        sectionLayout.spacing = 12f;
+        sectionLayout.childControlWidth = true;
+        sectionLayout.childControlHeight = true;
+        sectionLayout.childForceExpandWidth = false;
+        sectionLayout.childAlignment = TextAnchor.MiddleCenter;
+
+        GameObject textBlock = CreateUIObject("Text", section.transform);
+        VerticalLayoutGroup textLayout = textBlock.AddComponent<VerticalLayoutGroup>();
+        textLayout.spacing = 2f;
+        textLayout.childControlWidth = true;
+        textLayout.childControlHeight = true;
+        textLayout.childForceExpandHeight = false;
+        AddLayoutElement(textBlock, 0f, 0f, 1f);
+
+        TextMeshProUGUI title = CreateText(textBlock.transform, "Daily goal", 24, FontStyles.Bold, TextAlignmentOptions.Left);
+        title.color = new Color(0.7f, 1f, 0.78f, 1f);
+
+        TextMeshProUGUI subtitle = CreateText(textBlock.transform, "How many real-life tasks complete the day.", 18, FontStyles.Normal, TextAlignmentOptions.Left);
+        subtitle.color = new Color(0.82f, 0.88f, 0.92f, 1f);
+
+        dailyGoalInput = CreateInput(section.transform, "Goal", 140f, 58f);
+        dailyGoalInput.contentType = TMP_InputField.ContentType.IntegerNumber;
+        dailyGoalInput.text = DailyRoutineProgress.Instance.DailyGoal.ToString();
+
+        Button saveButton = CreateButton(section.transform, "Save", new Color(0.12f, 0.42f, 0.28f, 1f), new Vector2(150f, 58f));
+        saveButton.onClick.AddListener(SaveDailyGoal);
+    }
+
+    private void SaveDailyGoal()
+    {
+        int goal = ParseDailyGoal(dailyGoalInput, DailyRoutineProgress.Instance.DailyGoal);
+        DailyRoutineProgress.Instance.SetDailyGoal(goal);
+        dailyGoalInput.text = DailyRoutineProgress.Instance.DailyGoal.ToString();
+        RewardPopup.ShowMessage("Daily goal updated", $"{DailyRoutineProgress.Instance.DailyGoal} tasks per day");
     }
 
     private void BuildCustomAssign(Transform parent)
@@ -437,6 +482,14 @@ public class ParentReviewRuntimeOverlay : MonoBehaviour
             return fallback;
 
         return Mathf.Clamp(value, 0, 9999);
+    }
+
+    private int ParseDailyGoal(TMP_InputField input, int fallback)
+    {
+        if (input == null || !int.TryParse(input.text, out int value))
+            return fallback;
+
+        return Mathf.Clamp(value, 1, 12);
     }
 
     private Canvas CreateCanvas()

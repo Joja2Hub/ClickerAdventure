@@ -12,4 +12,7 @@ public class PlayerStatsSaveData
     public int currentDmg = 1;
     public int damageUpgradeLevel = 0;
     public int healthUpgradeLevel = 0;
+    public int critUpgradeLevel = 0;
+    public int rageUpgradeLevel = 0;
+    public int lootUpgradeLevel = 0;
 }
