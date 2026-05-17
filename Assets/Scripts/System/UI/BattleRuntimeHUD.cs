@@ -6,10 +6,18 @@ public class BattleRuntimeHUD : MonoBehaviour
 {
     private BattleManager battleManager;
     private TextMeshProUGUI waveText;
+    private TextMeshProUGUI lootText;
+    private TextMeshProUGUI healthText;
+    private TextMeshProUGUI comboText;
+    private TextMeshProUGUI rageText;
     private TextMeshProUGUI powerText;
     private TextMeshProUGUI healText;
+    private TextMeshProUGUI rageButtonText;
+    private Image healthFill;
+    private Image rageFill;
     private Button powerButton;
     private Button healButton;
+    private Button rageButton;
     private float powerCooldownRemaining;
     private float healCooldownRemaining;
 
@@ -21,12 +29,18 @@ public class BattleRuntimeHUD : MonoBehaviour
         battleManager = manager;
         Build();
         UpdateWave(manager.CurrentWave, manager.TotalWaves);
+        RefreshStats();
     }
 
     private void Update()
     {
-        TickCooldown(ref powerCooldownRemaining, PowerCooldown, powerButton, powerText, "Power");
-        TickCooldown(ref healCooldownRemaining, HealCooldown, healButton, healText, "Heal");
+        if (battleManager == null)
+            return;
+
+        TickCooldown(ref powerCooldownRemaining, powerButton, powerText, "Power", battleManager.CanCastPowerStrike);
+        TickCooldown(ref healCooldownRemaining, healButton, healText, "Heal", battleManager.CanCastHeal);
+        UpdateRageButton();
+        RefreshStats();
     }
 
     public void UpdateWave(int currentWave, int totalWaves)
@@ -39,6 +53,37 @@ public class BattleRuntimeHUD : MonoBehaviour
     {
         if (waveText != null && battleManager != null)
             waveText.text = $"Wave {battleManager.CurrentWave}/{battleManager.TotalWaves}";
+
+        RefreshStats();
+    }
+
+    public void RefreshStats()
+    {
+        if (battleManager == null)
+            return;
+
+        int currentHealth = battleManager.PlayerHealth;
+        int maxHealth = Mathf.Max(1, battleManager.PlayerMaxHealth);
+        float healthRatio = Mathf.Clamp01((float)currentHealth / maxHealth);
+        float rageRatio = Mathf.Clamp01(battleManager.RageCharge / 100f);
+
+        if (healthText != null)
+            healthText.text = $"HP {currentHealth}/{maxHealth}";
+
+        if (healthFill != null)
+            healthFill.fillAmount = healthRatio;
+
+        if (comboText != null)
+            comboText.text = battleManager.ComboCount > 1 ? $"Combo x{battleManager.ComboCount}" : "Combo ready";
+
+        if (rageText != null)
+            rageText.text = $"Rage {battleManager.RageCharge}%";
+
+        if (rageFill != null)
+            rageFill.fillAmount = rageRatio;
+
+        if (lootText != null)
+            lootText.text = $"{battleManager.TotalGold} gold  |  {battleManager.TotalExp} XP";
     }
 
     private void CastPower()
@@ -59,13 +104,22 @@ public class BattleRuntimeHUD : MonoBehaviour
             healCooldownRemaining = HealCooldown;
     }
 
-    private void TickCooldown(ref float cooldown, float duration, Button button, TextMeshProUGUI label, string readyText)
+    private void CastRage()
+    {
+        if (battleManager == null)
+            return;
+
+        battleManager.CastRageBurst();
+    }
+
+    private void TickCooldown(ref float cooldown, Button button, TextMeshProUGUI label, string readyText, bool canUse)
     {
         if (cooldown > 0f)
             cooldown = Mathf.Max(0f, cooldown - Time.deltaTime);
 
+        bool isReady = cooldown <= 0f && canUse;
         if (button != null)
-            button.interactable = cooldown <= 0f;
+            button.interactable = isReady;
 
         if (label == null)
             return;
@@ -73,31 +127,75 @@ public class BattleRuntimeHUD : MonoBehaviour
         label.text = cooldown > 0f ? $"{Mathf.CeilToInt(cooldown)}s" : readyText;
     }
 
+    private void UpdateRageButton()
+    {
+        if (rageButton != null)
+            rageButton.interactable = battleManager.CanCastRageBurst;
+
+        if (rageButtonText != null)
+            rageButtonText.text = battleManager.RageCharge >= 100 ? "Rage" : $"{battleManager.RageCharge}%";
+    }
+
     private void Build()
     {
         Canvas canvas = CreateCanvas();
 
-        GameObject topPanel = CreatePanel(canvas.transform, "WavePanel", new Color(0.05f, 0.06f, 0.08f, 0.78f));
+        GameObject topPanel = CreatePanel(canvas.transform, "BattleTopPanel", new Color(0.05f, 0.06f, 0.08f, 0.84f));
         RectTransform topRect = topPanel.GetComponent<RectTransform>();
         topRect.anchorMin = new Vector2(0.5f, 1f);
         topRect.anchorMax = new Vector2(0.5f, 1f);
         topRect.pivot = new Vector2(0.5f, 1f);
-        topRect.sizeDelta = new Vector2(360f, 70f);
+        topRect.sizeDelta = new Vector2(820f, 112f);
         topRect.anchoredPosition = new Vector2(0f, -24f);
 
+        HorizontalLayoutGroup topLayout = topPanel.AddComponent<HorizontalLayoutGroup>();
+        topLayout.padding = new RectOffset(24, 24, 18, 18);
+        topLayout.spacing = 18f;
+        topLayout.childAlignment = TextAnchor.MiddleCenter;
+        topLayout.childControlHeight = true;
+        topLayout.childControlWidth = true;
+
         waveText = CreateText(topPanel.transform, "Wave 1/1", 30, FontStyles.Bold);
-        Stretch(waveText.GetComponent<RectTransform>());
+        lootText = CreateText(topPanel.transform, "0 gold  |  0 XP", 26, FontStyles.Bold);
+        lootText.color = new Color(1f, 0.88f, 0.48f, 1f);
+
+        GameObject statsPanel = CreatePanel(canvas.transform, "PlayerStatsPanel", new Color(0.06f, 0.07f, 0.1f, 0.88f));
+        RectTransform statsRect = statsPanel.GetComponent<RectTransform>();
+        statsRect.anchorMin = new Vector2(0f, 1f);
+        statsRect.anchorMax = new Vector2(0f, 1f);
+        statsRect.pivot = new Vector2(0f, 1f);
+        statsRect.sizeDelta = new Vector2(400f, 210f);
+        statsRect.anchoredPosition = new Vector2(28f, -156f);
+
+        VerticalLayoutGroup statsLayout = statsPanel.AddComponent<VerticalLayoutGroup>();
+        statsLayout.padding = new RectOffset(22, 22, 18, 18);
+        statsLayout.spacing = 12f;
+        statsLayout.childControlWidth = true;
+        statsLayout.childControlHeight = true;
+        statsLayout.childForceExpandHeight = false;
+
+        healthText = CreateText(statsPanel.transform, "HP 0/0", 26, FontStyles.Bold);
+        healthText.alignment = TextAlignmentOptions.Left;
+        healthFill = CreateBar(statsPanel.transform, "HealthBar", new Color(0.12f, 0.16f, 0.18f, 1f), new Color(0.22f, 0.86f, 0.34f, 1f));
+
+        comboText = CreateText(statsPanel.transform, "Combo ready", 24, FontStyles.Bold);
+        comboText.alignment = TextAlignmentOptions.Left;
+        comboText.color = new Color(0.7f, 0.86f, 1f, 1f);
+
+        rageText = CreateText(statsPanel.transform, "Rage 0%", 22, FontStyles.Bold);
+        rageText.alignment = TextAlignmentOptions.Left;
+        rageFill = CreateBar(statsPanel.transform, "RageBar", new Color(0.16f, 0.1f, 0.12f, 1f), new Color(1f, 0.32f, 0.18f, 1f));
 
         GameObject abilityPanel = CreatePanel(canvas.transform, "AbilityPanel", new Color(0f, 0f, 0f, 0f));
         RectTransform abilityRect = abilityPanel.GetComponent<RectTransform>();
         abilityRect.anchorMin = new Vector2(0.5f, 0f);
         abilityRect.anchorMax = new Vector2(0.5f, 0f);
         abilityRect.pivot = new Vector2(0.5f, 0f);
-        abilityRect.sizeDelta = new Vector2(520f, 130f);
+        abilityRect.sizeDelta = new Vector2(760f, 130f);
         abilityRect.anchoredPosition = new Vector2(0f, 42f);
 
         HorizontalLayoutGroup layout = abilityPanel.AddComponent<HorizontalLayoutGroup>();
-        layout.spacing = 22f;
+        layout.spacing = 20f;
         layout.childAlignment = TextAnchor.MiddleCenter;
         layout.childControlHeight = true;
         layout.childControlWidth = true;
@@ -109,6 +207,9 @@ public class BattleRuntimeHUD : MonoBehaviour
 
         healButton = CreateAbilityButton(abilityPanel.transform, "Heal", new Color(0.13f, 0.42f, 0.24f, 0.95f), out healText);
         healButton.onClick.AddListener(CastHeal);
+
+        rageButton = CreateAbilityButton(abilityPanel.transform, "Rage", new Color(0.62f, 0.2f, 0.08f, 0.95f), out rageButtonText);
+        rageButton.onClick.AddListener(CastRage);
     }
 
     private Canvas CreateCanvas()
@@ -146,6 +247,22 @@ public class BattleRuntimeHUD : MonoBehaviour
         labelText.raycastTarget = false;
 
         return button;
+    }
+
+    private Image CreateBar(Transform parent, string name, Color backgroundColor, Color fillColor)
+    {
+        GameObject root = CreatePanel(parent, name, backgroundColor);
+        LayoutElement rootElement = root.AddComponent<LayoutElement>();
+        rootElement.preferredHeight = 18f;
+
+        Image fill = CreatePanel(root.transform, "Fill", fillColor).GetComponent<Image>();
+        fill.type = Image.Type.Filled;
+        fill.fillMethod = Image.FillMethod.Horizontal;
+        fill.fillOrigin = (int)Image.OriginHorizontal.Left;
+        fill.fillAmount = 1f;
+        Stretch(fill.GetComponent<RectTransform>());
+
+        return fill;
     }
 
     private GameObject CreatePanel(Transform parent, string name, Color color)

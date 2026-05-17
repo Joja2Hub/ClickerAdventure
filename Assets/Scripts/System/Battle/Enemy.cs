@@ -10,6 +10,7 @@ public class Enemy : MonoBehaviour
     private Coroutine attackCoroutine;
     private Coroutine hitPulseCoroutine;
     private Transform healthFill;
+    private Transform attackWarning;
     private Sprite healthBarSprite;
     private bool isDead;
     private Vector3 baseScale;
@@ -33,16 +34,24 @@ public class Enemy : MonoBehaviour
 
     private void OnMouseDown()
     {
-        TakeDamage(player.currentDmg);
+        if (BattleManager.Instance != null)
+            BattleManager.Instance.HandlePlayerTap(this);
+        else if (player != null)
+            TakeDamage(player.currentDmg);
     }
 
     public void TakeDamage(int dmg)
+    {
+        TakeDamage(dmg, false, null);
+    }
+
+    public void TakeDamage(int dmg, bool isCritical, string prefix)
     {
         if (isDead)
             return;
 
         currentHealth = Mathf.Max(0, currentHealth - dmg);
-        DamageNumberPopup.Show(transform.position, dmg);
+        DamageNumberPopup.ShowDamage(transform.position, dmg, isCritical, prefix);
         UpdateHealthBar();
         StartCoroutine(FlashRed());
         PlayHitPulse();
@@ -109,7 +118,50 @@ public class Enemy : MonoBehaviour
         while (true)
         {
             yield return new WaitForSeconds(enemyData.attackSpeed);
-            player.TakeDamage(enemyData.damage);
+            if (isDead || player == null)
+                yield break;
+
+            yield return AttackWindup();
+
+            if (isDead || player == null)
+                yield break;
+
+            int damage = BattleManager.Instance != null
+                ? BattleManager.Instance.ResolveIncomingDamage(enemyData.damage)
+                : enemyData.damage;
+
+            player.TakeDamage(damage);
+            DamageNumberPopup.ShowText(transform.position + Vector3.left * 0.9f, $"-{damage} HP", new Color(1f, 0.35f, 0.35f, 1f), 38f);
+        }
+    }
+
+    private IEnumerator AttackWindup()
+    {
+        ShowAttackWarning(true);
+
+        const float duration = 0.42f;
+        float elapsed = 0f;
+        Vector3 startScale = transform.localScale;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+            float wave = Mathf.Sin(t * Mathf.PI * 2f);
+            transform.localScale = startScale * (1f + 0.04f * wave);
+
+            if (enemySprite != null)
+                enemySprite.color = Color.Lerp(Color.white, new Color(1f, 0.52f, 0.36f, 1f), Mathf.Sin(t * Mathf.PI));
+
+            yield return null;
+        }
+
+        ShowAttackWarning(false);
+
+        if (!isDead)
+        {
+            transform.localScale = baseScale;
+            enemySprite.color = Color.white;
         }
     }
 
@@ -154,6 +206,12 @@ public class Enemy : MonoBehaviour
         SpriteRenderer fill = CreateBarPart(root, "Fill", sprite, new Color(0.22f, 0.9f, 0.28f, 0.95f), 12);
         fill.transform.localScale = new Vector3(1.05f, 0.07f, 1f);
         healthFill = fill.transform;
+
+        SpriteRenderer warning = CreateBarPart(root, "AttackWarning", sprite, new Color(1f, 0.23f, 0.12f, 0.9f), 13);
+        warning.transform.localPosition = new Vector3(0f, 0.18f, 0f);
+        warning.transform.localScale = new Vector3(0.34f, 0.08f, 1f);
+        attackWarning = warning.transform;
+        ShowAttackWarning(false);
     }
 
     private SpriteRenderer CreateBarPart(Transform parent, string name, Sprite sprite, Color color, int sortingOrder)
@@ -178,6 +236,12 @@ public class Enemy : MonoBehaviour
         float ratio = Mathf.Clamp01((float)currentHealth / maxHealth);
         healthFill.localScale = new Vector3(1.05f * ratio, 0.07f, 1f);
         healthFill.localPosition = new Vector3(-0.525f * (1f - ratio), 0f, 0f);
+    }
+
+    private void ShowAttackWarning(bool visible)
+    {
+        if (attackWarning != null)
+            attackWarning.gameObject.SetActive(visible);
     }
 
     private float GetSpriteTopOffset()

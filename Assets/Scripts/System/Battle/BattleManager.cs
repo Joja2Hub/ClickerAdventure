@@ -19,9 +19,22 @@ public class BattleManager : MonoBehaviour
     private ResultPanel resultPanel;
     private BattleRuntimeHUD runtimeHUD;
     private Enemy currentEnemy;
+    private int comboCount;
+    private int rageCharge;
+    private float lastAttackTime;
 
     public int CurrentWave => Mathf.Min(currentWaveIndex + 1, locationData != null ? locationData.waveCount : 1);
     public int TotalWaves => locationData != null ? locationData.waveCount : 1;
+    public int TotalGold => totalGold;
+    public int TotalExp => totalExp;
+    public int ComboCount => comboCount;
+    public int RageCharge => rageCharge;
+    public int PlayerHealth => playerStats != null ? playerStats.currentHealth : 0;
+    public int PlayerMaxHealth => playerStats != null ? playerStats.maxHealth : 1;
+    public bool HasActiveEnemy => currentEnemy != null && !battleEnded;
+    public bool CanCastPowerStrike => HasActiveEnemy && playerStats != null;
+    public bool CanCastHeal => !battleEnded && playerStats != null && playerStats.currentHealth < playerStats.maxHealth;
+    public bool CanCastRageBurst => HasActiveEnemy && playerStats != null && rageCharge >= 100;
 
     private void Awake()
     {
@@ -61,6 +74,8 @@ public class BattleManager : MonoBehaviour
 
     private void OnPlayerHealthChanged(int currentHealth, int maxHealth)
     {
+        runtimeHUD?.RefreshStats();
+
         if (currentHealth <= 0)
             Defeat();
     }
@@ -102,6 +117,7 @@ public class BattleManager : MonoBehaviour
         enemy.Initialize();
         enemy.OnDefeated += OnEnemyDefeated;
         runtimeHUD?.UpdateWave(CurrentWave, TotalWaves);
+        runtimeHUD?.RefreshStats();
     }
 
     private void OnEnemyDefeated(EnemyData data)
@@ -112,9 +128,11 @@ public class BattleManager : MonoBehaviour
         totalGold += data.GetRandomMoneyReward();
         totalExp += data.GetRandomExpReward();
         currentEnemy = null;
+        AddRage(10);
 
         currentWaveIndex++;
         runtimeHUD?.UpdateWave(CurrentWave, TotalWaves);
+        runtimeHUD?.RefreshStats();
         StartCoroutine(SpawnNextEnemyWithDelay());
     }
 
@@ -129,26 +147,76 @@ public class BattleManager : MonoBehaviour
         resultPanel.ShowResults(totalGold, totalExp);
     }
 
+    public void HandlePlayerTap(Enemy enemy)
+    {
+        if (battleEnded || enemy == null || enemy != currentEnemy || playerStats == null)
+            return;
+
+        if (Time.time - lastAttackTime > 1.25f)
+            comboCount = 0;
+
+        comboCount++;
+        lastAttackTime = Time.time;
+
+        bool isCritical = Random.value < GetCriticalChance();
+        int comboBonus = Mathf.FloorToInt(comboCount / 5f);
+        int damage = Mathf.Max(1, playerStats.currentDmg + comboBonus);
+
+        if (isCritical)
+            damage = Mathf.RoundToInt(damage * 2.1f);
+
+        enemy.TakeDamage(damage, isCritical, isCritical ? "CRIT" : null);
+        AddRage(isCritical ? 14 : 7);
+        runtimeHUD?.RefreshStats();
+    }
+
     public bool CastPowerStrike()
     {
-        if (battleEnded || currentEnemy == null || playerStats == null)
+        if (!CanCastPowerStrike)
             return false;
 
-        int damage = Mathf.Max(1, playerStats.currentDmg * 5);
-        currentEnemy.TakeDamage(damage);
+        int damage = Mathf.Max(1, playerStats.currentDmg * 5 + comboCount);
+        currentEnemy.TakeDamage(damage, true, "POWER");
+        AddRage(12);
         RewardPopup.ShowMessage("Power strike", $"-{damage}");
+        runtimeHUD?.RefreshStats();
         return true;
     }
 
     public bool CastHeal()
     {
-        if (battleEnded || playerStats == null || playerStats.currentHealth >= playerStats.maxHealth)
+        if (!CanCastHeal)
             return false;
 
         int healAmount = Mathf.Max(20, Mathf.RoundToInt(playerStats.maxHealth * 0.35f));
         playerStats.SetHealth(playerStats.currentHealth + healAmount);
         RewardPopup.ShowMessage("Heal", $"+{healAmount} HP");
+        runtimeHUD?.RefreshStats();
         return true;
+    }
+
+    public bool CastRageBurst()
+    {
+        if (!CanCastRageBurst)
+            return false;
+
+        int damage = Mathf.Max(10, playerStats.currentDmg * 12 + comboCount * 2);
+        rageCharge = 0;
+        currentEnemy.TakeDamage(damage, true, "RAGE");
+        RewardPopup.ShowMessage("Rage burst", $"-{damage}");
+        runtimeHUD?.RefreshStats();
+        return true;
+    }
+
+    public int ResolveIncomingDamage(int baseDamage)
+    {
+        if (comboCount >= 12)
+            comboCount = Mathf.Max(0, comboCount - 4);
+        else
+            comboCount = 0;
+
+        runtimeHUD?.RefreshStats();
+        return Mathf.Max(1, baseDamage);
     }
 
     public void Defeat()
@@ -171,5 +239,16 @@ public class BattleManager : MonoBehaviour
 
         if (PlayerStats.Instance != null)
             PlayerStats.Instance.SetHealth(10);
+    }
+
+    private void AddRage(int amount)
+    {
+        rageCharge = Mathf.Clamp(rageCharge + amount, 0, 100);
+    }
+
+    private float GetCriticalChance()
+    {
+        float comboBonus = Mathf.Min(0.18f, comboCount * 0.006f);
+        return 0.08f + comboBonus;
     }
 }

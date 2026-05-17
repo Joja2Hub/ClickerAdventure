@@ -13,12 +13,25 @@ public class DamageNumberPopup : MonoBehaviour
 
     public static void Show(Vector3 worldPosition, int damage)
     {
+        ShowDamage(worldPosition, damage, false, null);
+    }
+
+    public static void ShowDamage(Vector3 worldPosition, int damage, bool isCritical, string prefix)
+    {
+        string text = string.IsNullOrEmpty(prefix) ? $"-{damage}" : $"{prefix}\n-{damage}";
+        Color color = isCritical ? new Color(1f, 0.22f, 0.16f, 1f) : new Color(1f, 0.82f, 0.2f, 1f);
+        float size = isCritical ? 54f : 42f;
+        ShowText(worldPosition, text, color, size);
+    }
+
+    public static void ShowText(Vector3 worldPosition, string text, Color color, float fontSize)
+    {
         Canvas popupCanvas = GetCanvas();
         GameObject popupObject = new GameObject("DamageNumber", typeof(RectTransform), typeof(CanvasGroup));
         popupObject.transform.SetParent(popupCanvas.transform, false);
 
         DamageNumberPopup popup = popupObject.AddComponent<DamageNumberPopup>();
-        popup.Initialize(worldPosition, damage);
+        popup.Initialize(worldPosition, text, color, fontSize);
     }
 
     private static Canvas GetCanvas()
@@ -40,20 +53,20 @@ public class DamageNumberPopup : MonoBehaviour
         return canvas;
     }
 
-    private void Initialize(Vector3 worldPosition, int damage)
+    private void Initialize(Vector3 worldPosition, string text, Color color, float fontSize)
     {
         rectTransform = GetComponent<RectTransform>();
         canvasGroup = GetComponent<CanvasGroup>();
 
         damageText = gameObject.AddComponent<TextMeshProUGUI>();
-        damageText.text = $"-{damage}";
-        damageText.fontSize = 42;
+        damageText.text = text;
+        damageText.fontSize = fontSize;
         damageText.fontStyle = FontStyles.Bold;
         damageText.alignment = TextAlignmentOptions.Center;
-        damageText.color = new Color(1f, 0.82f, 0.2f, 1f);
+        damageText.color = color;
         damageText.raycastTarget = false;
 
-        rectTransform.sizeDelta = new Vector2(180f, 80f);
+        rectTransform.sizeDelta = new Vector2(220f, 110f);
 
         Vector3 screenPosition = Camera.main != null
             ? Camera.main.WorldToScreenPoint(worldPosition)
