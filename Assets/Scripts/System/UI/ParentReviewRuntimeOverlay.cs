@@ -329,19 +329,27 @@ public class ParentReviewRuntimeOverlay : MonoBehaviour
             Button approve = CreateButton(actions.transform, "Approve", new Color(0.12f, 0.42f, 0.22f, 1f), new Vector2(176f, 54f));
             approve.onClick.AddListener(() =>
             {
-                receiver.ApproveTask(task);
-                task.status = RealWorldTaskStatus.Approved;
-                task.isComplete = true;
-                Refresh();
+                ParentTaskReviewPopup.Show(task, true, parentNote =>
+                {
+                    receiver.ApproveTask(task, parentNote);
+                    task.status = RealWorldTaskStatus.Approved;
+                    task.isComplete = true;
+                    task.parentNote = parentNote;
+                    Refresh();
+                });
             });
 
             Button reject = CreateButton(actions.transform, "Reject", new Color(0.52f, 0.16f, 0.14f, 1f), new Vector2(176f, 54f));
             reject.onClick.AddListener(() =>
             {
-                receiver.RejectTask(task);
-                task.status = RealWorldTaskStatus.Rejected;
-                task.isComplete = false;
-                Refresh();
+                ParentTaskReviewPopup.Show(task, false, parentNote =>
+                {
+                    receiver.RejectTask(task, parentNote);
+                    task.status = RealWorldTaskStatus.Rejected;
+                    task.isComplete = false;
+                    task.parentNote = parentNote;
+                    Refresh();
+                });
             });
         }
         else
