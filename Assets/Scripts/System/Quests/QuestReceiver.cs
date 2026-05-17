@@ -30,6 +30,39 @@ public class QuestReceiver : MonoBehaviour
         InitializeParentReviewOverlay();
     }
 
+    public void CreateRealWorldTask(string questName, string description, int rewardGold, int rewardXP, int hardReward = 0)
+    {
+        if (string.IsNullOrWhiteSpace(questName))
+            return;
+
+        var taskData = new Dictionary<string, object>
+        {
+            { "questName", questName.Trim() },
+            { "title", questName.Trim() },
+            { "description", string.IsNullOrWhiteSpace(description) ? string.Empty : description.Trim() },
+            { "rewardGold", Mathf.Max(0, rewardGold) },
+            { "rewardXP", Mathf.Max(0, rewardXP) },
+            { "hardReward", Mathf.Max(0, hardReward) },
+            { "status", RealWorldTaskStatus.Assigned },
+            { "isComplete", false },
+            { "isClaimed", false },
+            { "childNote", string.Empty },
+            { "parentNote", string.Empty },
+            { "createdAt", DateTime.UtcNow.ToString("O") }
+        };
+
+        RealWorldTasks.AddAsync(taskData).ContinueWith(taskResult =>
+        {
+            if (taskResult.IsFaulted)
+            {
+                Debug.LogError($"Failed to create real-world task '{questName}': {taskResult.Exception}");
+                return;
+            }
+
+            Debug.Log($"Real-world task created: {questName}");
+        });
+    }
+
     public void SubmitForParentApproval(ExternalQuestData task, string childNote = "")
     {
         if (task == null || string.IsNullOrEmpty(task.externalId))

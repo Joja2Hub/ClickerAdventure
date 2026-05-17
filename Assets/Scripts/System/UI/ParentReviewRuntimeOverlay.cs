@@ -6,12 +6,21 @@ using UnityEngine.UI;
 
 public class ParentReviewRuntimeOverlay : MonoBehaviour
 {
+    private readonly ParentTaskTemplate[] taskTemplates =
+    {
+        new ParentTaskTemplate("Clean room", "Tidy toys, clothes, and desk.", 30, 15),
+        new ParentTaskTemplate("Homework focus", "Finish today's homework block.", 40, 25),
+        new ParentTaskTemplate("Read 20 min", "Read a book for twenty minutes.", 25, 20),
+        new ParentTaskTemplate("Help at home", "Help with one useful home chore.", 30, 20)
+    };
+
     private QuestReceiver receiver;
     private Canvas canvas;
     private GameObject root;
     private GameObject panel;
     private Transform listParent;
     private TextMeshProUGUI emptyText;
+    private TextMeshProUGUI statusText;
     private bool isInitialized;
 
     public void Initialize(QuestReceiver questReceiver)
@@ -49,12 +58,12 @@ public class ParentReviewRuntimeOverlay : MonoBehaviour
         toggleRect.anchoredPosition = new Vector2(-24f, -24f);
         toggleButton.onClick.AddListener(TogglePanel);
 
-        panel = CreatePanel(root.transform, "ParentReviewPanel", new Color(0.07f, 0.08f, 0.1f, 0.96f));
+        panel = CreatePanel(root.transform, "ParentReviewPanel", new Color(0.07f, 0.08f, 0.1f, 0.97f));
         RectTransform panelRect = panel.GetComponent<RectTransform>();
         panelRect.anchorMin = new Vector2(0.5f, 0.5f);
         panelRect.anchorMax = new Vector2(0.5f, 0.5f);
         panelRect.pivot = new Vector2(0.5f, 0.5f);
-        panelRect.sizeDelta = new Vector2(900f, 680f);
+        panelRect.sizeDelta = new Vector2(940f, 860f);
         panelRect.anchoredPosition = Vector2.zero;
         panel.SetActive(false);
 
@@ -66,23 +75,71 @@ public class ParentReviewRuntimeOverlay : MonoBehaviour
         layout.childForceExpandHeight = false;
         layout.childForceExpandWidth = true;
 
-        GameObject header = CreateUIObject("Header", panel.transform);
+        BuildHeader(panel.transform);
+        BuildQuickAssign(panel.transform);
+
+        statusText = CreateText(panel.transform, "Active: 0  |  Waiting: 0  |  Approved: 0", 21, FontStyles.Bold, TextAlignmentOptions.Left);
+        statusText.color = new Color(0.82f, 0.9f, 1f, 1f);
+        AddLayoutElement(statusText.gameObject, 0f, 34f, 1f);
+
+        emptyText = CreateText(panel.transform, "No real-life tasks yet.", 22, FontStyles.Normal, TextAlignmentOptions.Center);
+        emptyText.color = new Color(0.78f, 0.8f, 0.84f, 1f);
+        AddLayoutElement(emptyText.gameObject, 0f, 40f, 1f);
+
+        BuildTaskScroll(panel.transform);
+    }
+
+    private void BuildHeader(Transform parent)
+    {
+        GameObject header = CreateUIObject("Header", parent);
         HorizontalLayoutGroup headerLayout = header.AddComponent<HorizontalLayoutGroup>();
         headerLayout.childControlWidth = true;
         headerLayout.childForceExpandWidth = false;
         headerLayout.childAlignment = TextAnchor.MiddleCenter;
-        AddLayoutElement(header, 0f, 56f, 1f);
+        AddLayoutElement(header, 0f, 58f, 1f);
 
-        TextMeshProUGUI title = CreateText(header.transform, "Parent review", 30, FontStyles.Bold, TextAlignmentOptions.Left);
+        TextMeshProUGUI title = CreateText(header.transform, "Parent center", 31, FontStyles.Bold, TextAlignmentOptions.Left);
+        title.color = new Color(1f, 0.92f, 0.68f, 1f);
         AddLayoutElement(title.gameObject, 0f, 56f, 1f);
 
         Button closeButton = CreateButton(header.transform, "Close", new Color(0.28f, 0.11f, 0.12f, 1f), new Vector2(130f, 48f));
         closeButton.onClick.AddListener(() => panel.SetActive(false));
+    }
 
-        emptyText = CreateText(panel.transform, "No tasks are waiting for approval.", 22, FontStyles.Normal, TextAlignmentOptions.Center);
-        AddLayoutElement(emptyText.gameObject, 0f, 42f, 1f);
+    private void BuildQuickAssign(Transform parent)
+    {
+        GameObject section = CreatePanel(parent, "QuickAssign", new Color(0.12f, 0.13f, 0.17f, 1f));
+        AddLayoutElement(section, 0f, 186f, 1f);
 
-        GameObject scrollRoot = CreateUIObject("TaskScroll", panel.transform);
+        VerticalLayoutGroup sectionLayout = section.AddComponent<VerticalLayoutGroup>();
+        sectionLayout.padding = new RectOffset(18, 18, 14, 16);
+        sectionLayout.spacing = 12f;
+        sectionLayout.childControlWidth = true;
+        sectionLayout.childControlHeight = true;
+        sectionLayout.childForceExpandHeight = false;
+
+        TextMeshProUGUI title = CreateText(section.transform, "Quick assign", 24, FontStyles.Bold, TextAlignmentOptions.Left);
+        AddLayoutElement(title.gameObject, 0f, 32f, 1f);
+
+        GameObject buttonRow = CreateUIObject("TemplateRow", section.transform);
+        HorizontalLayoutGroup rowLayout = buttonRow.AddComponent<HorizontalLayoutGroup>();
+        rowLayout.spacing = 12f;
+        rowLayout.childAlignment = TextAnchor.MiddleCenter;
+        rowLayout.childControlWidth = true;
+        rowLayout.childControlHeight = true;
+        rowLayout.childForceExpandWidth = false;
+        AddLayoutElement(buttonRow, 0f, 98f, 1f);
+
+        foreach (ParentTaskTemplate template in taskTemplates)
+        {
+            Button button = CreateButton(buttonRow.transform, $"{template.Title}\n+{template.Gold}g +{template.Experience}xp", new Color(0.1f, 0.32f, 0.42f, 1f), new Vector2(206f, 92f), 18);
+            button.onClick.AddListener(() => CreateTaskFromTemplate(template));
+        }
+    }
+
+    private void BuildTaskScroll(Transform parent)
+    {
+        GameObject scrollRoot = CreateUIObject("TaskScroll", parent);
         AddLayoutElement(scrollRoot, 0f, 0f, 1f, 1f);
         Image scrollImage = scrollRoot.AddComponent<Image>();
         scrollImage.color = new Color(1f, 1f, 1f, 0.04f);
@@ -104,12 +161,14 @@ public class ParentReviewRuntimeOverlay : MonoBehaviour
         contentRect.pivot = new Vector2(0.5f, 1f);
         contentRect.anchoredPosition = Vector2.zero;
         contentRect.sizeDelta = new Vector2(0f, 0f);
+
         VerticalLayoutGroup contentLayout = content.AddComponent<VerticalLayoutGroup>();
         contentLayout.padding = new RectOffset(14, 14, 14, 14);
         contentLayout.spacing = 12f;
         contentLayout.childControlHeight = true;
         contentLayout.childControlWidth = true;
         contentLayout.childForceExpandHeight = false;
+
         ContentSizeFitter fitter = content.AddComponent<ContentSizeFitter>();
         fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
@@ -125,6 +184,12 @@ public class ParentReviewRuntimeOverlay : MonoBehaviour
             Refresh();
     }
 
+    private void CreateTaskFromTemplate(ParentTaskTemplate template)
+    {
+        receiver.CreateRealWorldTask(template.Title, template.Description, template.Gold, template.Experience);
+        RewardPopup.ShowMessage("Task assigned", $"+{template.Gold} gold\n+{template.Experience} XP");
+    }
+
     private void Refresh()
     {
         if (listParent == null || QuestManager.Instance == null)
@@ -136,9 +201,17 @@ public class ParentReviewRuntimeOverlay : MonoBehaviour
         }
 
         List<ExternalQuestData> tasks = QuestManager.Instance.externalQuestDatas
-            .Where(task => task.status == RealWorldTaskStatus.Submitted)
+            .Where(task => task.status != RealWorldTaskStatus.Claimed && !task.isClaimed)
+            .OrderByDescending(task => task.status == RealWorldTaskStatus.Submitted)
+            .ThenByDescending(task => task.status == RealWorldTaskStatus.Approved)
+            .ThenBy(task => task.questName)
             .ToList();
 
+        int waitingCount = tasks.Count(task => task.status == RealWorldTaskStatus.Submitted);
+        int approvedCount = tasks.Count(task => task.status == RealWorldTaskStatus.Approved || task.isComplete);
+        int assignedCount = tasks.Count(task => task.status == RealWorldTaskStatus.Assigned || task.status == RealWorldTaskStatus.Rejected);
+
+        statusText.text = $"Active: {assignedCount}  |  Waiting: {waitingCount}  |  Approved: {approvedCount}";
         emptyText.gameObject.SetActive(tasks.Count == 0);
 
         foreach (ExternalQuestData task in tasks)
@@ -149,8 +222,12 @@ public class ParentReviewRuntimeOverlay : MonoBehaviour
 
     private void CreateTaskRow(ExternalQuestData task)
     {
-        GameObject row = CreatePanel(listParent, "ParentTaskRow", new Color(0.13f, 0.15f, 0.19f, 0.98f));
-        AddLayoutElement(row, 0f, 170f, 1f);
+        Color rowColor = task.status == RealWorldTaskStatus.Submitted
+            ? new Color(0.16f, 0.17f, 0.23f, 1f)
+            : new Color(0.12f, 0.14f, 0.18f, 0.98f);
+
+        GameObject row = CreatePanel(listParent, "ParentTaskRow", rowColor);
+        AddLayoutElement(row, 0f, 172f, 1f);
 
         HorizontalLayoutGroup rowLayout = row.AddComponent<HorizontalLayoutGroup>();
         rowLayout.padding = new RectOffset(18, 18, 14, 14);
@@ -170,30 +247,72 @@ public class ParentReviewRuntimeOverlay : MonoBehaviour
         CreateText(textBlock.transform, task.questName, 24, FontStyles.Bold, TextAlignmentOptions.Left);
         CreateText(textBlock.transform, task.description, 18, FontStyles.Normal, TextAlignmentOptions.Left);
         CreateText(textBlock.transform, $"Reward: {task.rewardGold} gold / {task.rewardXP} XP", 18, FontStyles.Normal, TextAlignmentOptions.Left);
-        CreateText(textBlock.transform, string.IsNullOrEmpty(task.childNote) ? "Child note: none" : $"Child note: {task.childNote}", 18, FontStyles.Italic, TextAlignmentOptions.Left);
+        CreateText(textBlock.transform, $"Status: {GetReadableStatus(task)}", 18, FontStyles.Bold, TextAlignmentOptions.Left).color = GetStatusColor(task);
+
+        string noteText = string.IsNullOrEmpty(task.childNote) ? "Child note: none" : $"Child note: {task.childNote}";
+        CreateText(textBlock.transform, noteText, 17, FontStyles.Italic, TextAlignmentOptions.Left).color = new Color(0.78f, 0.8f, 0.86f, 1f);
 
         GameObject actions = CreateUIObject("Actions", row.transform);
         VerticalLayoutGroup actionLayout = actions.AddComponent<VerticalLayoutGroup>();
         actionLayout.spacing = 10f;
         actionLayout.childControlWidth = true;
         actionLayout.childForceExpandWidth = true;
-        AddLayoutElement(actions, 180f, 0f);
+        AddLayoutElement(actions, 184f, 0f);
 
-        Button approve = CreateButton(actions.transform, "Approve", new Color(0.12f, 0.42f, 0.22f, 1f), new Vector2(170f, 54f));
-        approve.onClick.AddListener(() =>
+        if (task.status == RealWorldTaskStatus.Submitted)
         {
-            receiver.ApproveTask(task);
-            task.status = RealWorldTaskStatus.Approved;
-            Refresh();
-        });
+            Button approve = CreateButton(actions.transform, "Approve", new Color(0.12f, 0.42f, 0.22f, 1f), new Vector2(176f, 54f));
+            approve.onClick.AddListener(() =>
+            {
+                receiver.ApproveTask(task);
+                task.status = RealWorldTaskStatus.Approved;
+                task.isComplete = true;
+                Refresh();
+            });
 
-        Button reject = CreateButton(actions.transform, "Reject", new Color(0.52f, 0.16f, 0.14f, 1f), new Vector2(170f, 54f));
-        reject.onClick.AddListener(() =>
+            Button reject = CreateButton(actions.transform, "Reject", new Color(0.52f, 0.16f, 0.14f, 1f), new Vector2(176f, 54f));
+            reject.onClick.AddListener(() =>
+            {
+                receiver.RejectTask(task);
+                task.status = RealWorldTaskStatus.Rejected;
+                task.isComplete = false;
+                Refresh();
+            });
+        }
+        else
         {
-            receiver.RejectTask(task);
-            task.status = RealWorldTaskStatus.Rejected;
-            Refresh();
-        });
+            TextMeshProUGUI badge = CreateText(actions.transform, GetReadableStatus(task), 20, FontStyles.Bold, TextAlignmentOptions.Center);
+            badge.color = GetStatusColor(task);
+            AddLayoutElement(badge.gameObject, 176f, 54f);
+        }
+    }
+
+    private string GetReadableStatus(ExternalQuestData task)
+    {
+        if (task.status == RealWorldTaskStatus.Submitted)
+            return "Waiting review";
+
+        if (task.status == RealWorldTaskStatus.Approved || task.isComplete)
+            return "Ready to claim";
+
+        if (task.status == RealWorldTaskStatus.Rejected)
+            return "Needs redo";
+
+        return "Assigned";
+    }
+
+    private Color GetStatusColor(ExternalQuestData task)
+    {
+        if (task.status == RealWorldTaskStatus.Submitted)
+            return new Color(1f, 0.8f, 0.34f, 1f);
+
+        if (task.status == RealWorldTaskStatus.Approved || task.isComplete)
+            return new Color(0.35f, 1f, 0.52f, 1f);
+
+        if (task.status == RealWorldTaskStatus.Rejected)
+            return new Color(1f, 0.42f, 0.36f, 1f);
+
+        return new Color(0.72f, 0.82f, 1f, 1f);
     }
 
     private Canvas CreateCanvas()
@@ -225,7 +344,7 @@ public class ParentReviewRuntimeOverlay : MonoBehaviour
         return panelObject;
     }
 
-    private Button CreateButton(Transform parent, string label, Color color, Vector2 size)
+    private Button CreateButton(Transform parent, string label, Color color, Vector2 size, int fontSize = 20)
     {
         GameObject buttonObject = CreatePanel(parent, label + "Button", color);
         RectTransform rect = buttonObject.GetComponent<RectTransform>();
@@ -234,7 +353,7 @@ public class ParentReviewRuntimeOverlay : MonoBehaviour
         Button button = buttonObject.AddComponent<Button>();
         button.targetGraphic = buttonObject.GetComponent<Image>();
 
-        TextMeshProUGUI text = CreateText(buttonObject.transform, label, 20, FontStyles.Bold, TextAlignmentOptions.Center);
+        TextMeshProUGUI text = CreateText(buttonObject.transform, label, fontSize, FontStyles.Bold, TextAlignmentOptions.Center);
         Stretch(text.GetComponent<RectTransform>());
         text.raycastTarget = false;
 
@@ -277,5 +396,21 @@ public class ParentReviewRuntimeOverlay : MonoBehaviour
 
         layoutElement.flexibleWidth = flexibleWidth;
         layoutElement.flexibleHeight = flexibleHeight;
+    }
+
+    private readonly struct ParentTaskTemplate
+    {
+        public ParentTaskTemplate(string title, string description, int gold, int experience)
+        {
+            Title = title;
+            Description = description;
+            Gold = gold;
+            Experience = experience;
+        }
+
+        public string Title { get; }
+        public string Description { get; }
+        public int Gold { get; }
+        public int Experience { get; }
     }
 }
