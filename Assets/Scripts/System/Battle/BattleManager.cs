@@ -3,6 +3,8 @@ using UnityEngine;
 
 public class BattleManager : MonoBehaviour
 {
+    public static BattleManager Instance { get; private set; }
+
     [SerializeField] private Transform enemyParent;
     [SerializeField] private GameObject resultPanelObject;
     [SerializeField] private GameObject bgImage;
@@ -15,6 +17,16 @@ public class BattleManager : MonoBehaviour
 
     private PlayerStats playerStats;
     private ResultPanel resultPanel;
+    private BattleRuntimeHUD runtimeHUD;
+    private Enemy currentEnemy;
+
+    public int CurrentWave => Mathf.Min(currentWaveIndex + 1, locationData != null ? locationData.waveCount : 1);
+    public int TotalWaves => locationData != null ? locationData.waveCount : 1;
+
+    private void Awake()
+    {
+        Instance = this;
+    }
 
     private void Start()
     {
@@ -33,6 +45,8 @@ public class BattleManager : MonoBehaviour
         }
 
         resultPanel = resultPanelObject.GetComponent<ResultPanel>();
+        runtimeHUD = gameObject.AddComponent<BattleRuntimeHUD>();
+        runtimeHUD.Initialize(this);
         SetupBattle();
     }
 
@@ -40,6 +54,9 @@ public class BattleManager : MonoBehaviour
     {
         if (playerStats != null)
             playerStats.OnHealthChanged -= OnPlayerHealthChanged;
+
+        if (Instance == this)
+            Instance = null;
     }
 
     private void OnPlayerHealthChanged(int currentHealth, int maxHealth)
@@ -64,6 +81,8 @@ public class BattleManager : MonoBehaviour
         if (battleEnded)
             yield break;
 
+        runtimeHUD?.SetWaitingForEnemy();
+
         if (currentWaveIndex >= locationData.waveCount)
         {
             EndBattle();
@@ -79,8 +98,10 @@ public class BattleManager : MonoBehaviour
         GameObject enemyGO = enemyParent != null ? Instantiate(prefab, enemyParent) : Instantiate(prefab);
 
         Enemy enemy = enemyGO.GetComponent<Enemy>();
+        currentEnemy = enemy;
         enemy.Initialize();
         enemy.OnDefeated += OnEnemyDefeated;
+        runtimeHUD?.UpdateWave(CurrentWave, TotalWaves);
     }
 
     private void OnEnemyDefeated(EnemyData data)
@@ -90,8 +111,10 @@ public class BattleManager : MonoBehaviour
 
         totalGold += data.GetRandomMoneyReward();
         totalExp += data.GetRandomExpReward();
+        currentEnemy = null;
 
         currentWaveIndex++;
+        runtimeHUD?.UpdateWave(CurrentWave, TotalWaves);
         StartCoroutine(SpawnNextEnemyWithDelay());
     }
 
@@ -106,12 +129,35 @@ public class BattleManager : MonoBehaviour
         resultPanel.ShowResults(totalGold, totalExp);
     }
 
+    public bool CastPowerStrike()
+    {
+        if (battleEnded || currentEnemy == null || playerStats == null)
+            return false;
+
+        int damage = Mathf.Max(1, playerStats.currentDmg * 5);
+        currentEnemy.TakeDamage(damage);
+        RewardPopup.ShowMessage("Power strike", $"-{damage}");
+        return true;
+    }
+
+    public bool CastHeal()
+    {
+        if (battleEnded || playerStats == null || playerStats.currentHealth >= playerStats.maxHealth)
+            return false;
+
+        int healAmount = Mathf.Max(20, Mathf.RoundToInt(playerStats.maxHealth * 0.35f));
+        playerStats.SetHealth(playerStats.currentHealth + healAmount);
+        RewardPopup.ShowMessage("Heal", $"+{healAmount} HP");
+        return true;
+    }
+
     public void Defeat()
     {
         if (battleEnded)
             return;
 
         battleEnded = true;
+        currentEnemy = null;
         currentWaveIndex = locationData.waveCount;
         totalExp = 0;
         totalGold = 0;

@@ -14,11 +14,14 @@ public class PlayerStats : MonoBehaviour
     public int currentHealth = 100;
     public int maxHealth = 100;
     public int currentDmg = 1;
+    public int damageUpgradeLevel = 0;
+    public int healthUpgradeLevel = 0;
 
     public event Action<int> OnMoneyChanged;
     public event Action<int> OnLevelChanged;
     public event Action<int, int> OnExperienceChanged;
     public event Action<int, int> OnHealthChanged;
+    public event Action OnStatsChanged;
 
     private void Awake()
     {
@@ -96,6 +99,58 @@ public class PlayerStats : MonoBehaviour
         SetHealth(maxHealth);
     }
 
+    public bool TrySpendMoney(int amount)
+    {
+        if (amount <= 0)
+            return true;
+
+        if (money < amount)
+            return false;
+
+        money -= amount;
+        OnMoneyChanged?.Invoke(money);
+        Save();
+        return true;
+    }
+
+    public int GetDamageUpgradeCost()
+    {
+        return Mathf.RoundToInt(60 * Mathf.Pow(1.35f, damageUpgradeLevel));
+    }
+
+    public int GetHealthUpgradeCost()
+    {
+        return Mathf.RoundToInt(70 * Mathf.Pow(1.35f, healthUpgradeLevel));
+    }
+
+    public bool UpgradeDamage()
+    {
+        int cost = GetDamageUpgradeCost();
+        if (!TrySpendMoney(cost))
+            return false;
+
+        damageUpgradeLevel++;
+        currentDmg += 1 + damageUpgradeLevel / 3;
+        OnStatsChanged?.Invoke();
+        Save();
+        return true;
+    }
+
+    public bool UpgradeMaxHealth()
+    {
+        int cost = GetHealthUpgradeCost();
+        if (!TrySpendMoney(cost))
+            return false;
+
+        healthUpgradeLevel++;
+        maxHealth += 10;
+        currentHealth = Mathf.Min(maxHealth, currentHealth + 10);
+        OnHealthChanged?.Invoke(currentHealth, maxHealth);
+        OnStatsChanged?.Invoke();
+        Save();
+        return true;
+    }
+
     public void Save()
     {
         var saveData = new PlayerStatsSaveData
@@ -106,7 +161,9 @@ public class PlayerStats : MonoBehaviour
             money = money,
             currentHealth = currentHealth,
             maxHealth = maxHealth,
-            currentDmg = currentDmg
+            currentDmg = currentDmg,
+            damageUpgradeLevel = damageUpgradeLevel,
+            healthUpgradeLevel = healthUpgradeLevel
         };
 
         PlayerPrefs.SetString(SaveKey, JsonUtility.ToJson(saveData));
@@ -129,6 +186,8 @@ public class PlayerStats : MonoBehaviour
         currentHealth = saveData.currentHealth;
         maxHealth = saveData.maxHealth;
         currentDmg = saveData.currentDmg;
+        damageUpgradeLevel = saveData.damageUpgradeLevel;
+        healthUpgradeLevel = saveData.healthUpgradeLevel;
     }
 
     private void OnApplicationPause(bool pauseStatus)

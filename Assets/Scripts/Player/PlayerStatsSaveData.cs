@@ -10,4 +10,6 @@ public class PlayerStatsSaveData
     public int currentHealth = 100;
     public int maxHealth = 100;
     public int currentDmg = 1;
+    public int damageUpgradeLevel = 0;
+    public int healthUpgradeLevel = 0;
 }

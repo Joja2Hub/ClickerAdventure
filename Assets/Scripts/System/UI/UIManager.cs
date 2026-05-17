@@ -14,6 +14,7 @@ public class UIManager : MonoBehaviour
     public TextMeshProUGUI levelText;
 
     private PlayerStats subscribedStats;
+    private UpgradeShopRuntimeOverlay shopOverlay;
 
     private void Start()
     {
@@ -23,6 +24,7 @@ public class UIManager : MonoBehaviour
         HideAllPanels();
         blocker.SetActive(false);
         SubscribeToStats();
+        SetupRuntimeShop();
     }
 
     private void OnDestroy()
@@ -89,6 +91,12 @@ public class UIManager : MonoBehaviour
 
         UpdateMoney(subscribedStats.money);
         UpdateLevel(subscribedStats.level);
+    }
+
+    private void SetupRuntimeShop()
+    {
+        shopOverlay = gameObject.AddComponent<UpgradeShopRuntimeOverlay>();
+        shopOverlay.Initialize();
     }
 
     private void UnsubscribeFromStats()

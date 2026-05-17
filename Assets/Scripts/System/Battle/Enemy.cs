@@ -8,8 +8,11 @@ public class Enemy : MonoBehaviour
     private int currentHealth;
     private int maxHealth;
     private Coroutine attackCoroutine;
+    private Coroutine hitPulseCoroutine;
     private Transform healthFill;
     private Sprite healthBarSprite;
+    private bool isDead;
+    private Vector3 baseScale;
 
     private SpriteRenderer enemySprite => GetComponent<SpriteRenderer>();
 
@@ -19,6 +22,7 @@ public class Enemy : MonoBehaviour
     public void Initialize()
     {
         player = PlayerStats.Instance;
+        baseScale = transform.localScale;
         maxHealth = Mathf.Max(1, enemyData.health);
         currentHealth = maxHealth;
         CreateHealthBar();
@@ -32,12 +36,16 @@ public class Enemy : MonoBehaviour
         TakeDamage(player.currentDmg);
     }
 
-    private void TakeDamage(int dmg)
+    public void TakeDamage(int dmg)
     {
+        if (isDead)
+            return;
+
         currentHealth = Mathf.Max(0, currentHealth - dmg);
         DamageNumberPopup.Show(transform.position, dmg);
         UpdateHealthBar();
         StartCoroutine(FlashRed());
+        PlayHitPulse();
 
         if (currentHealth <= 0)
         {
@@ -48,12 +56,19 @@ public class Enemy : MonoBehaviour
     private IEnumerator FlashRed()
     {
         enemySprite.color = Color.red;
-        yield return new WaitForSeconds(0.1f);
+        yield return new WaitForSeconds(0.08f);
+        if (isDead)
+            yield break;
+
         enemySprite.color = Color.white;
     }
 
     private void Die()
     {
+        if (isDead)
+            return;
+
+        isDead = true;
         if (attackCoroutine != null)
             StopCoroutine(attackCoroutine);
 
@@ -61,6 +76,31 @@ public class Enemy : MonoBehaviour
             QuestManager.Instance.RegisterEnemyKilled(enemyData);
 
         OnDefeated?.Invoke(enemyData);
+        StartCoroutine(DeathRoutine());
+    }
+
+    private IEnumerator DeathRoutine()
+    {
+        Collider2D enemyCollider = GetComponent<Collider2D>();
+        if (enemyCollider != null)
+            enemyCollider.enabled = false;
+
+        Color startColor = enemySprite.color;
+        Vector3 startScale = transform.localScale;
+        const float duration = 0.28f;
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+            float eased = 1f - Mathf.Pow(1f - t, 3f);
+
+            enemySprite.color = Color.Lerp(startColor, new Color(1f, 1f, 1f, 0f), eased);
+            transform.localScale = Vector3.Lerp(startScale, startScale * 1.22f, eased);
+            yield return null;
+        }
+
         Destroy(gameObject);
     }
 
@@ -71,6 +111,32 @@ public class Enemy : MonoBehaviour
             yield return new WaitForSeconds(enemyData.attackSpeed);
             player.TakeDamage(enemyData.damage);
         }
+    }
+
+    private void PlayHitPulse()
+    {
+        if (hitPulseCoroutine != null)
+            StopCoroutine(hitPulseCoroutine);
+
+        hitPulseCoroutine = StartCoroutine(HitPulseRoutine());
+    }
+
+    private IEnumerator HitPulseRoutine()
+    {
+        const float duration = 0.12f;
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+            float wave = Mathf.Sin(t * Mathf.PI);
+            transform.localScale = baseScale * (1f + 0.09f * wave);
+            yield return null;
+        }
+
+        if (!isDead)
+            transform.localScale = baseScale;
     }
 
     private void CreateHealthBar()
