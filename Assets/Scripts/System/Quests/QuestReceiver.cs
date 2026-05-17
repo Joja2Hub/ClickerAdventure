@@ -10,9 +10,11 @@ public class QuestReceiver : MonoBehaviour
 
     private FirebaseFirestore db;
     private ListenerRegistration listener;
+    private ParentReviewRuntimeOverlay parentReviewOverlay;
 
     [SerializeField] private string userId = "id1";
     [SerializeField] private string realWorldTasksCollection = "realWorldTasks";
+    [SerializeField] private bool enableParentReviewOverlay = true;
 
     private CollectionReference RealWorldTasks => db.Collection("users").Document(userId).Collection(realWorldTasksCollection);
 
@@ -25,6 +27,7 @@ public class QuestReceiver : MonoBehaviour
     {
         db = FirebaseFirestore.DefaultInstance;
         StartListeningForQuestChanges(userId);
+        InitializeParentReviewOverlay();
     }
 
     public void SubmitForParentApproval(ExternalQuestData task, string childNote = "")
@@ -156,6 +159,18 @@ public class QuestReceiver : MonoBehaviour
 
         if (Instance == this)
             Instance = null;
+    }
+
+    private void InitializeParentReviewOverlay()
+    {
+        if (!enableParentReviewOverlay)
+            return;
+
+        parentReviewOverlay = FindFirstObjectByType<ParentReviewRuntimeOverlay>();
+        if (parentReviewOverlay == null)
+            parentReviewOverlay = gameObject.AddComponent<ParentReviewRuntimeOverlay>();
+
+        parentReviewOverlay.Initialize(this);
     }
 
     private ExternalQuestData CreateExternalQuest(DocumentSnapshot doc)
