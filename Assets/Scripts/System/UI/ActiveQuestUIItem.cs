@@ -85,9 +85,7 @@ public class ActiveQuestUIItem : MonoBehaviour
     {
         if (currentExternal.CanSubmitForReview)
         {
-            QuestReceiver.Instance?.SubmitForParentApproval(currentExternal);
-            RewardPopup.ShowMessage("Sent to parent", "Waiting for approval");
-            SetupExternal(currentExternal);
+            RealWorldTaskSubmitPopup.Show(currentExternal, SubmitExternalForReview);
             return;
         }
 
@@ -125,6 +123,13 @@ public class ActiveQuestUIItem : MonoBehaviour
             activePanel.RefreshActiveQuests();
 
         Destroy(gameObject);
+    }
+
+    private void SubmitExternalForReview(string childNote)
+    {
+        QuestReceiver.Instance?.SubmitForParentApproval(currentExternal, childNote);
+        RewardPopup.ShowMessage("Sent to parent", string.IsNullOrWhiteSpace(childNote) ? "Waiting for approval" : "Note included");
+        SetupExternal(currentExternal);
     }
 
     private string GetProgressDescription(QuestData quest)
