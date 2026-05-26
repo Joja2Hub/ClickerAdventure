@@ -27,7 +27,6 @@ public class RealWorldTaskNotificationToast : MonoBehaviour
 
         GameObject toastObject = new GameObject("RealWorldTaskNotificationToast");
         instance = toastObject.AddComponent<RealWorldTaskNotificationToast>();
-        DontDestroyOnLoad(toastObject);
         instance.Build();
         return instance;
     }
@@ -77,20 +76,10 @@ public class RealWorldTaskNotificationToast : MonoBehaviour
 
     private void Build()
     {
-        GameObject canvasObject = new GameObject("RealWorldTaskNotificationCanvas", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
-        canvasObject.transform.SetParent(transform, false);
-
-        Canvas canvas = canvasObject.GetComponent<Canvas>();
-        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        canvas.sortingOrder = 1180;
-
-        CanvasScaler scaler = canvasObject.GetComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1080f, 1920f);
-        scaler.matchWidthOrHeight = 0.5f;
-
         GameObject panel = new GameObject("ToastPanel", typeof(RectTransform), typeof(CanvasGroup));
-        panel.transform.SetParent(canvasObject.transform, false);
+        Canvas canvas = RuntimeUiHost.GetCanvas(transform, 1180);
+        panel.transform.SetParent(RuntimeUiHost.GetPopupRoot(canvas), false);
+        panel.transform.SetAsLastSibling();
         panelRect = panel.GetComponent<RectTransform>();
         panelRect.anchorMin = new Vector2(0.5f, 1f);
         panelRect.anchorMax = new Vector2(0.5f, 1f);

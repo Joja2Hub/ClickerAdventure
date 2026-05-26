@@ -33,7 +33,6 @@ public class ParentTaskReviewPopup : MonoBehaviour
 
         GameObject popupObject = new GameObject("ParentTaskReviewPopup");
         instance = popupObject.AddComponent<ParentTaskReviewPopup>();
-        DontDestroyOnLoad(popupObject);
         instance.Build();
         return instance;
     }
@@ -82,19 +81,9 @@ public class ParentTaskReviewPopup : MonoBehaviour
 
     private void Build()
     {
-        GameObject canvasObject = new GameObject("ParentTaskReviewCanvas", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
-        canvasObject.transform.SetParent(transform, false);
-
-        Canvas canvas = canvasObject.GetComponent<Canvas>();
-        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        canvas.sortingOrder = 1160;
-
-        CanvasScaler scaler = canvasObject.GetComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1080f, 1920f);
-        scaler.matchWidthOrHeight = 0.5f;
-
-        GameObject blocker = CreateUIObject("ReviewBlocker", canvasObject.transform);
+        Canvas canvas = RuntimeUiHost.GetCanvas(transform, 1160);
+        GameObject blocker = CreateUIObject("ReviewBlocker", RuntimeUiHost.GetPopupRoot(canvas));
+        blocker.transform.SetAsLastSibling();
         Stretch(blocker.GetComponent<RectTransform>());
         Image blockerImage = blocker.AddComponent<Image>();
         blockerImage.color = new Color(0f, 0f, 0f, 0.5f);

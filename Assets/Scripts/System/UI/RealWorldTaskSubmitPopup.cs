@@ -31,7 +31,6 @@ public class RealWorldTaskSubmitPopup : MonoBehaviour
 
         GameObject popupObject = new GameObject("RealWorldTaskSubmitPopup");
         instance = popupObject.AddComponent<RealWorldTaskSubmitPopup>();
-        DontDestroyOnLoad(popupObject);
         instance.Build();
         return instance;
     }
@@ -72,9 +71,10 @@ public class RealWorldTaskSubmitPopup : MonoBehaviour
 
     private void Build()
     {
-        canvas = CreateCanvas();
+        canvas = RuntimeUiHost.GetCanvas(transform, 1150);
 
-        GameObject blocker = CreateUIObject("SubmitTaskBlocker", canvas.transform);
+        GameObject blocker = CreateUIObject("SubmitTaskBlocker", RuntimeUiHost.GetPopupRoot(canvas));
+        blocker.transform.SetAsLastSibling();
         Stretch(blocker.GetComponent<RectTransform>());
 
         Image blockerImage = blocker.AddComponent<Image>();
@@ -123,23 +123,6 @@ public class RealWorldTaskSubmitPopup : MonoBehaviour
         submitButton.onClick.AddListener(Submit);
 
         Hide();
-    }
-
-    private Canvas CreateCanvas()
-    {
-        GameObject canvasObject = new GameObject("RealWorldTaskSubmitCanvas", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
-        canvasObject.transform.SetParent(transform, false);
-
-        Canvas popupCanvas = canvasObject.GetComponent<Canvas>();
-        popupCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        popupCanvas.sortingOrder = 1150;
-
-        CanvasScaler scaler = canvasObject.GetComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1080f, 1920f);
-        scaler.matchWidthOrHeight = 0.5f;
-
-        return popupCanvas;
     }
 
     private TMP_InputField CreateInput(Transform parent, string placeholder, float preferredWidth, float preferredHeight)

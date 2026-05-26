@@ -140,9 +140,10 @@ public class BattleRuntimeHUD : MonoBehaviour
 
     private void Build()
     {
-        Canvas canvas = CreateCanvas();
+        Canvas canvas = RuntimeUiHost.GetCanvas(transform);
+        Transform hudRoot = RuntimeUiHost.GetHudRoot(canvas);
 
-        GameObject topPanel = CreatePanel(canvas.transform, "BattleTopPanel", new Color(0.05f, 0.06f, 0.08f, 0.84f));
+        GameObject topPanel = CreatePanel(hudRoot, "BattleTopPanel", new Color(0.05f, 0.06f, 0.08f, 0.84f));
         RectTransform topRect = topPanel.GetComponent<RectTransform>();
         topRect.anchorMin = new Vector2(0.5f, 1f);
         topRect.anchorMax = new Vector2(0.5f, 1f);
@@ -161,7 +162,7 @@ public class BattleRuntimeHUD : MonoBehaviour
         lootText = CreateText(topPanel.transform, "0 gold  |  0 XP", 26, FontStyles.Bold);
         lootText.color = new Color(1f, 0.88f, 0.48f, 1f);
 
-        GameObject statsPanel = CreatePanel(canvas.transform, "PlayerStatsPanel", new Color(0.06f, 0.07f, 0.1f, 0.88f));
+        GameObject statsPanel = CreatePanel(hudRoot, "PlayerStatsPanel", new Color(0.06f, 0.07f, 0.1f, 0.88f));
         RectTransform statsRect = statsPanel.GetComponent<RectTransform>();
         statsRect.anchorMin = new Vector2(0f, 1f);
         statsRect.anchorMax = new Vector2(0f, 1f);
@@ -188,7 +189,7 @@ public class BattleRuntimeHUD : MonoBehaviour
         rageText.alignment = TextAlignmentOptions.Left;
         rageFill = CreateBar(statsPanel.transform, "RageBar", new Color(0.16f, 0.1f, 0.12f, 1f), new Color(1f, 0.32f, 0.18f, 1f));
 
-        GameObject abilityPanel = CreatePanel(canvas.transform, "AbilityPanel", new Color(0f, 0f, 0f, 0f));
+        GameObject abilityPanel = CreatePanel(hudRoot, "AbilityPanel", new Color(0f, 0f, 0f, 0f));
         RectTransform abilityRect = abilityPanel.GetComponent<RectTransform>();
         abilityRect.anchorMin = new Vector2(0.5f, 0f);
         abilityRect.anchorMax = new Vector2(0.5f, 0f);
@@ -212,23 +213,6 @@ public class BattleRuntimeHUD : MonoBehaviour
 
         rageButton = CreateAbilityButton(abilityPanel.transform, "Rage", new Color(0.62f, 0.2f, 0.08f, 0.95f), out rageButtonText);
         rageButton.onClick.AddListener(CastRage);
-    }
-
-    private Canvas CreateCanvas()
-    {
-        GameObject canvasObject = new GameObject("BattleRuntimeHUD", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
-        canvasObject.transform.SetParent(transform, false);
-
-        Canvas canvas = canvasObject.GetComponent<Canvas>();
-        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        canvas.sortingOrder = 900;
-
-        CanvasScaler scaler = canvasObject.GetComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1080f, 1920f);
-        scaler.matchWidthOrHeight = 0.5f;
-
-        return canvas;
     }
 
     private Button CreateAbilityButton(Transform parent, string label, Color color, out TextMeshProUGUI labelText)

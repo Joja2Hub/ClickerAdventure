@@ -205,37 +205,30 @@ public class UpgradeShopRuntimeOverlay : MonoBehaviour
 
     private void Build()
     {
-        canvas = CreateCanvas();
-        CreateOpenButton(canvas.transform);
-        CreatePanel(canvas.transform);
-    }
-
-    private Canvas CreateCanvas()
-    {
-        GameObject canvasObject = new GameObject("UpgradeShopRuntimeOverlay", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
-        canvasObject.transform.SetParent(transform, false);
-
-        Canvas shopCanvas = canvasObject.GetComponent<Canvas>();
-        shopCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        shopCanvas.sortingOrder = 850;
-
-        CanvasScaler scaler = canvasObject.GetComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1080f, 1920f);
-        scaler.matchWidthOrHeight = 0.5f;
-
-        return shopCanvas;
+        canvas = RuntimeUiHost.GetCanvas(transform);
+        CreateOpenButton(RuntimeUiHost.GetButtonRoot(canvas));
+        CreatePanel(RuntimeUiHost.GetPanelsRoot(canvas));
     }
 
     private void CreateOpenButton(Transform parent)
     {
         Button openButton = CreateButton(parent, "ShopButton", "Shop", new Color(0.11f, 0.28f, 0.43f, 0.94f), out _);
         RectTransform rect = openButton.GetComponent<RectTransform>();
-        rect.anchorMin = new Vector2(1f, 1f);
-        rect.anchorMax = new Vector2(1f, 1f);
-        rect.pivot = new Vector2(1f, 1f);
         rect.sizeDelta = new Vector2(170f, 72f);
-        rect.anchoredPosition = new Vector2(-30f, -110f);
+        if (!RuntimeUiHost.UsesLayout(parent))
+        {
+            rect.anchorMin = new Vector2(1f, 1f);
+            rect.anchorMax = new Vector2(1f, 1f);
+            rect.pivot = new Vector2(1f, 1f);
+            rect.anchoredPosition = new Vector2(-30f, -110f);
+        }
+
+        LayoutElement element = openButton.gameObject.GetComponent<LayoutElement>();
+        if (element == null)
+            element = openButton.gameObject.AddComponent<LayoutElement>();
+
+        element.preferredWidth = 170f;
+        element.preferredHeight = 72f;
         openButton.onClick.AddListener(ShowPanel);
     }
 

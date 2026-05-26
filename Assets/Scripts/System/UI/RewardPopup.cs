@@ -38,7 +38,6 @@ public class RewardPopup : MonoBehaviour
 
         GameObject popupObject = new GameObject("RewardPopup");
         instance = popupObject.AddComponent<RewardPopup>();
-        DontDestroyOnLoad(popupObject);
         instance.Build();
         return instance;
     }
@@ -59,9 +58,10 @@ public class RewardPopup : MonoBehaviour
 
     private void Build()
     {
-        canvas = CreateCanvas();
+        canvas = RuntimeUiHost.GetCanvas(transform, 1000);
 
-        GameObject blocker = CreateUIObject("RewardPopupBlocker", canvas.transform);
+        GameObject blocker = CreateUIObject("RewardPopupBlocker", RuntimeUiHost.GetPopupRoot(canvas));
+        blocker.transform.SetAsLastSibling();
         Stretch(blocker.GetComponent<RectTransform>());
         canvasGroup = blocker.AddComponent<CanvasGroup>();
         canvasGroup.alpha = 0f;
@@ -135,23 +135,6 @@ public class RewardPopup : MonoBehaviour
 
         canvasGroup.alpha = endAlpha;
         panelRect.localScale = Vector3.one * endScale;
-    }
-
-    private Canvas CreateCanvas()
-    {
-        GameObject canvasObject = new GameObject("RewardPopupCanvas", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
-        canvasObject.transform.SetParent(transform, false);
-
-        Canvas popupCanvas = canvasObject.GetComponent<Canvas>();
-        popupCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        popupCanvas.sortingOrder = 1000;
-
-        CanvasScaler scaler = canvasObject.GetComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1080f, 1920f);
-        scaler.matchWidthOrHeight = 0.5f;
-
-        return popupCanvas;
     }
 
     private GameObject CreateUIObject(string name, Transform parent)

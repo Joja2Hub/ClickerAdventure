@@ -39,17 +39,7 @@ public class DamageNumberPopup : MonoBehaviour
         if (canvas != null)
             return canvas;
 
-        GameObject canvasObject = new GameObject("DamageNumberCanvas", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
-        canvas = canvasObject.GetComponent<Canvas>();
-        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        canvas.sortingOrder = 1100;
-
-        CanvasScaler scaler = canvasObject.GetComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1080f, 1920f);
-        scaler.matchWidthOrHeight = 0.5f;
-
-        DontDestroyOnLoad(canvasObject);
+        canvas = RuntimeUiHost.GetCanvas(null, 1100);
         return canvas;
     }
 

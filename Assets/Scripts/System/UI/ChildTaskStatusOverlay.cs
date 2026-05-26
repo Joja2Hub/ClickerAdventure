@@ -121,7 +121,7 @@ public class ChildTaskStatusOverlay : MonoBehaviour
 
     private void Build()
     {
-        Canvas canvas = CreateCanvas();
+        Canvas canvas = RuntimeUiHost.GetCanvas(transform);
 
         GameObject root = CreatePanel(canvas.transform, "ChildTaskStatusButton", new Color(0.07f, 0.09f, 0.12f, 0.94f));
         RectTransform rootRect = root.GetComponent<RectTransform>();
@@ -167,23 +167,6 @@ public class ChildTaskStatusOverlay : MonoBehaviour
         badgeRect.pivot = new Vector2(1f, 1f);
         badgeRect.sizeDelta = new Vector2(10f, 128f);
         badgeRect.anchoredPosition = Vector2.zero;
-    }
-
-    private Canvas CreateCanvas()
-    {
-        GameObject canvasObject = new GameObject("ChildTaskStatusOverlay", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
-        canvasObject.transform.SetParent(transform, false);
-
-        Canvas canvas = canvasObject.GetComponent<Canvas>();
-        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        canvas.sortingOrder = 845;
-
-        CanvasScaler scaler = canvasObject.GetComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1080f, 1920f);
-        scaler.matchWidthOrHeight = 0.5f;
-
-        return canvas;
     }
 
     private GameObject CreatePanel(Transform parent, string name, Color color)

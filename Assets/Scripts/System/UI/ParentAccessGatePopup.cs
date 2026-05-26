@@ -45,7 +45,6 @@ public class ParentAccessGatePopup : MonoBehaviour
 
         GameObject popupObject = new GameObject("ParentAccessGatePopup");
         instance = popupObject.AddComponent<ParentAccessGatePopup>();
-        DontDestroyOnLoad(popupObject);
         instance.Build();
         return instance;
     }
@@ -134,19 +133,9 @@ public class ParentAccessGatePopup : MonoBehaviour
 
     private void Build()
     {
-        GameObject canvasObject = new GameObject("ParentAccessGateCanvas", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
-        canvasObject.transform.SetParent(transform, false);
-
-        Canvas canvas = canvasObject.GetComponent<Canvas>();
-        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        canvas.sortingOrder = 1190;
-
-        CanvasScaler scaler = canvasObject.GetComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1080f, 1920f);
-        scaler.matchWidthOrHeight = 0.5f;
-
-        GameObject blocker = CreateUIObject("ParentAccessBlocker", canvasObject.transform);
+        Canvas canvas = RuntimeUiHost.GetCanvas(transform, 1190);
+        GameObject blocker = CreateUIObject("ParentAccessBlocker", RuntimeUiHost.GetPopupRoot(canvas));
+        blocker.transform.SetAsLastSibling();
         Stretch(blocker.GetComponent<RectTransform>());
         Image blockerImage = blocker.AddComponent<Image>();
         blockerImage.color = new Color(0f, 0f, 0f, 0.52f);

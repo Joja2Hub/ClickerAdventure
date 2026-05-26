@@ -34,9 +34,7 @@ public class ParentReviewRuntimeOverlay : MonoBehaviour
             return;
 
         receiver = questReceiver;
-        canvas = FindFirstObjectByType<Canvas>();
-        if (canvas == null)
-            canvas = CreateCanvas();
+        canvas = RuntimeUiHost.GetCanvas(transform);
 
         BuildOverlay();
         receiver.OnRealWorldTasksChanged += Refresh;
@@ -52,15 +50,21 @@ public class ParentReviewRuntimeOverlay : MonoBehaviour
 
     private void BuildOverlay()
     {
-        root = CreateUIObject("ParentReviewOverlay", canvas.transform);
+        root = CreateUIObject("ParentReviewOverlay", RuntimeUiHost.GetPanelsRoot(canvas));
         Stretch(root.GetComponent<RectTransform>());
+        root.transform.SetAsLastSibling();
 
-        Button toggleButton = CreateButton(root.transform, "Parent", new Color(0.12f, 0.18f, 0.24f, 0.95f), new Vector2(170f, 56f));
+        Transform buttonRoot = RuntimeUiHost.GetButtonRoot(canvas);
+        Button toggleButton = CreateButton(buttonRoot, "Parent", new Color(0.12f, 0.18f, 0.24f, 0.95f), new Vector2(170f, 56f));
         RectTransform toggleRect = toggleButton.GetComponent<RectTransform>();
-        toggleRect.anchorMin = new Vector2(1f, 1f);
-        toggleRect.anchorMax = new Vector2(1f, 1f);
-        toggleRect.pivot = new Vector2(1f, 1f);
-        toggleRect.anchoredPosition = new Vector2(-24f, -24f);
+        if (!RuntimeUiHost.UsesLayout(buttonRoot))
+        {
+            toggleRect.anchorMin = new Vector2(1f, 1f);
+            toggleRect.anchorMax = new Vector2(1f, 1f);
+            toggleRect.pivot = new Vector2(1f, 1f);
+            toggleRect.anchoredPosition = new Vector2(-24f, -24f);
+        }
+
         toggleButton.onClick.AddListener(TogglePanel);
 
         panel = CreatePanel(root.transform, "ParentReviewPanel", new Color(0.07f, 0.08f, 0.1f, 0.97f));
@@ -490,20 +494,6 @@ public class ParentReviewRuntimeOverlay : MonoBehaviour
             return fallback;
 
         return Mathf.Clamp(value, 1, 12);
-    }
-
-    private Canvas CreateCanvas()
-    {
-        GameObject canvasObject = new GameObject("RuntimeCanvas", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
-        Canvas createdCanvas = canvasObject.GetComponent<Canvas>();
-        createdCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
-
-        CanvasScaler scaler = canvasObject.GetComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1080f, 1920f);
-        scaler.matchWidthOrHeight = 0.5f;
-
-        return createdCanvas;
     }
 
     private GameObject CreateUIObject(string name, Transform parent)
