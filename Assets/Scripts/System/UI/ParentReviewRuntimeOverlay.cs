@@ -55,7 +55,8 @@ public class ParentReviewRuntimeOverlay : MonoBehaviour
         root.transform.SetAsLastSibling();
 
         Transform buttonRoot = RuntimeUiHost.GetButtonRoot(canvas);
-        Button toggleButton = CreateButton(buttonRoot, "Parent", new Color(0.12f, 0.18f, 0.24f, 0.95f), new Vector2(170f, 56f));
+        Button toggleButton = CreateButton(buttonRoot, "Parent", new Color(0.12f, 0.18f, 0.24f, 0.95f), new Vector2(RuntimeUiStyle.MainButtonWidth, RuntimeUiStyle.MainButtonHeight), RuntimeUiStyle.ButtonTextSize);
+        RuntimeUiStyle.ApplyButton(toggleButton, new Color(0.12f, 0.18f, 0.24f, 0.95f));
         RectTransform toggleRect = toggleButton.GetComponent<RectTransform>();
         if (!RuntimeUiHost.UsesLayout(buttonRoot))
         {

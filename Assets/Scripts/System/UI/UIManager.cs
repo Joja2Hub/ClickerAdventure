@@ -1,5 +1,6 @@
 ﻿using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class UIManager : MonoBehaviour
 {
@@ -15,7 +16,6 @@ public class UIManager : MonoBehaviour
 
     private PlayerStats subscribedStats;
     private UpgradeShopRuntimeOverlay shopOverlay;
-    private ChildTaskStatusOverlay childTaskStatusOverlay;
     private AchievementRuntimeOverlay achievementOverlay;
 
     private void Start()
@@ -28,7 +28,7 @@ public class UIManager : MonoBehaviour
         SubscribeToStats();
         SetupRuntimeShop();
         SetupAchievementOverlay();
-        SetupChildTaskStatusOverlay();
+        ApplyUnifiedSceneStyle();
     }
 
     private void OnDestroy()
@@ -103,16 +103,59 @@ public class UIManager : MonoBehaviour
         shopOverlay.Initialize();
     }
 
-    private void SetupChildTaskStatusOverlay()
-    {
-        childTaskStatusOverlay = gameObject.AddComponent<ChildTaskStatusOverlay>();
-        childTaskStatusOverlay.Initialize(this);
-    }
-
     private void SetupAchievementOverlay()
     {
         achievementOverlay = gameObject.AddComponent<AchievementRuntimeOverlay>();
         achievementOverlay.Initialize();
+    }
+
+    private void ApplyUnifiedSceneStyle()
+    {
+        Canvas canvas = RuntimeUiHost.GetCanvas(transform);
+        Transform buttonRoot = RuntimeUiHost.GetButtonRoot(canvas);
+
+        foreach (Button button in buttonRoot.GetComponentsInChildren<Button>(true))
+        {
+            RuntimeUiStyle.ApplyButton(button, GetButtonColor(button), RuntimeUiStyle.MainButtonWidth, RuntimeUiStyle.MainButtonHeight);
+
+            TextMeshProUGUI label = button.GetComponentInChildren<TextMeshProUGUI>(true);
+            if (label != null)
+                RuntimeUiStyle.ApplyText(label, RuntimeUiStyle.ButtonTextSize, FontStyles.Bold, RuntimeUiStyle.Text, TextAlignmentOptions.Center);
+        }
+
+        ApplyPanelBase(settingsPanel);
+        ApplyPanelBase(acctiveQuestsPanel);
+        ApplyPanelBase(inventoryPanel);
+        ApplyPanelBase(levelPanel);
+        ApplyPanelBase(questPanel);
+    }
+
+    private Color GetButtonColor(Button button)
+    {
+        Image image = button.GetComponent<Image>();
+        if (image == null)
+            return RuntimeUiStyle.NeutralButton;
+
+        if (image.sprite != null)
+            return image.color;
+
+        return RuntimeUiStyle.NeutralButton;
+    }
+
+    private void ApplyPanelBase(GameObject panel)
+    {
+        if (panel == null)
+            return;
+
+        Image image = panel.GetComponent<Image>();
+        if (image != null && image.sprite == null)
+            image.color = RuntimeUiStyle.Panel;
+
+        foreach (TextMeshProUGUI label in panel.GetComponentsInChildren<TextMeshProUGUI>(true))
+        {
+            if (label.fontSize < RuntimeUiStyle.CaptionSize)
+                RuntimeUiStyle.ApplyText(label, RuntimeUiStyle.BodySize, label.fontStyle, RuntimeUiStyle.Text, label.alignment);
+        }
     }
 
     private void UnsubscribeFromStats()

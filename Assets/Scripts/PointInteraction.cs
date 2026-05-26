@@ -66,8 +66,15 @@ public class PointInteraction : MonoBehaviour
 
         townUIPrefab.SetActive(true);
         var townUI = townUIPrefab.GetComponent<TownUIController>();
+        if (townUI == null)
+            townUI = townUIPrefab.GetComponentInChildren<TownUIController>(true);
+
         if (townUI != null && townData != null)
             townUI.Setup(townData);
+        else if (townUI == null)
+            Debug.LogWarning($"Town UI prefab for {pointName} has no TownUIController.");
+        else
+            Debug.LogWarning($"Town point {pointName} has no TownData assigned.");
     }
 
     private void StartBattle()

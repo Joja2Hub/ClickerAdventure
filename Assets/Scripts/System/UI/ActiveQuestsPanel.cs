@@ -13,6 +13,7 @@ public class ActiveQuestsPanel : MonoBehaviour
         if (QuestManager.Instance == null || questListParent == null || questPrefab == null)
             return;
 
+        NormalizeQuestListLayout();
         ClearList();
 
         AddSection("Adventure quests", "Progress in the game world");
@@ -64,21 +65,21 @@ public class ActiveQuestsPanel : MonoBehaviour
     {
         GameObject section = CreateListTextObject("SectionHeader");
         Image background = section.AddComponent<Image>();
-        background.color = new Color(0.08f, 0.1f, 0.13f, 0.78f);
+        background.color = RuntimeUiStyle.Panel;
 
         VerticalLayoutGroup layout = section.AddComponent<VerticalLayoutGroup>();
-        layout.padding = new RectOffset(22, 22, 12, 12);
-        layout.spacing = 2f;
+        layout.padding = new RectOffset(28, 28, 16, 16);
+        layout.spacing = 4f;
         layout.childControlWidth = true;
         layout.childControlHeight = true;
         layout.childForceExpandHeight = false;
 
-        AddLayoutElement(section, 118f);
+        AddLayoutElement(section, 126f);
 
-        TextMeshProUGUI titleText = CreateText(section.transform, title, 34, FontStyles.Bold, new Color(1f, 0.92f, 0.62f, 1f));
+        TextMeshProUGUI titleText = CreateText(section.transform, title, RuntimeUiStyle.SectionTitleSize, FontStyles.Bold, RuntimeUiStyle.Gold);
         titleText.alignment = TextAlignmentOptions.Left;
 
-        TextMeshProUGUI subtitleText = CreateText(section.transform, subtitle, 22, FontStyles.Normal, new Color(0.82f, 0.86f, 0.92f, 1f));
+        TextMeshProUGUI subtitleText = CreateText(section.transform, subtitle, RuntimeUiStyle.CaptionSize, FontStyles.Normal, RuntimeUiStyle.MutedText);
         subtitleText.alignment = TextAlignmentOptions.Left;
     }
 
@@ -86,10 +87,10 @@ public class ActiveQuestsPanel : MonoBehaviour
     {
         GameObject empty = CreateListTextObject("EmptyState");
         Image background = empty.AddComponent<Image>();
-        background.color = new Color(1f, 1f, 1f, 0.06f);
-        AddLayoutElement(empty, 92f);
+        background.color = new Color(1f, 1f, 1f, 0.07f);
+        AddLayoutElement(empty, 104f);
 
-        TextMeshProUGUI label = CreateText(empty.transform, text, 24, FontStyles.Italic, new Color(0.75f, 0.79f, 0.86f, 1f));
+        TextMeshProUGUI label = CreateText(empty.transform, text, RuntimeUiStyle.BodySize, FontStyles.Italic, RuntimeUiStyle.MutedText);
         Stretch(label.GetComponent<RectTransform>());
         label.alignment = TextAlignmentOptions.Center;
     }
@@ -101,12 +102,12 @@ public class ActiveQuestsPanel : MonoBehaviour
 
         GameObject card = CreateListTextObject("DailyRoutineSummary");
         Image background = card.AddComponent<Image>();
-        background.color = new Color(0.09f, 0.14f, 0.16f, 0.96f);
-        AddLayoutElement(card, 156f);
+        background.color = RuntimeUiStyle.CardAlt;
+        AddLayoutElement(card, 178f);
 
         VerticalLayoutGroup layout = card.AddComponent<VerticalLayoutGroup>();
-        layout.padding = new RectOffset(22, 22, 14, 16);
-        layout.spacing = 8f;
+        layout.padding = new RectOffset(28, 28, 18, 18);
+        layout.spacing = 10f;
         layout.childControlWidth = true;
         layout.childControlHeight = true;
         layout.childForceExpandHeight = false;
@@ -114,7 +115,7 @@ public class ActiveQuestsPanel : MonoBehaviour
         TextMeshProUGUI title = CreateText(
             card.transform,
             $"Daily routine {routineProgress.CompletedToday}/{routineProgress.DailyGoal}",
-            28,
+            RuntimeUiStyle.CardTitleSize,
             FontStyles.Bold,
             new Color(0.7f, 1f, 0.78f, 1f));
         title.alignment = TextAlignmentOptions.Left;
@@ -126,21 +127,21 @@ public class ActiveQuestsPanel : MonoBehaviour
         TextMeshProUGUI subtitle = CreateText(
             card.transform,
             $"Streak: {routineProgress.CurrentStreak} days  |  {bonusStatus}",
-            20,
+            RuntimeUiStyle.CaptionSize,
             FontStyles.Normal,
-            new Color(0.82f, 0.9f, 0.92f, 1f));
+            RuntimeUiStyle.MutedText);
         subtitle.alignment = TextAlignmentOptions.Left;
 
         GameObject bar = CreateListTextObject("DailyRoutineProgressBar");
         bar.transform.SetParent(card.transform, false);
         Image barBackground = bar.AddComponent<Image>();
         barBackground.color = new Color(0.04f, 0.06f, 0.07f, 1f);
-        AddLayoutElement(bar, 18f);
+        AddLayoutElement(bar, 22f);
 
         GameObject fill = new GameObject("Fill", typeof(RectTransform));
         fill.transform.SetParent(bar.transform, false);
         Image fillImage = fill.AddComponent<Image>();
-        fillImage.color = new Color(0.25f, 0.86f, 0.46f, 1f);
+        fillImage.color = RuntimeUiStyle.Green;
         fillImage.type = Image.Type.Filled;
         fillImage.fillMethod = Image.FillMethod.Horizontal;
         fillImage.fillOrigin = (int)Image.OriginHorizontal.Left;
@@ -165,15 +166,32 @@ public class ActiveQuestsPanel : MonoBehaviour
         label.fontSize = size;
         label.fontStyle = style;
         label.color = color;
+        label.enableAutoSizing = false;
         label.textWrappingMode = TextWrappingModes.Normal;
         return label;
     }
 
     private void AddLayoutElement(GameObject target, float preferredHeight)
     {
-        LayoutElement layoutElement = target.AddComponent<LayoutElement>();
-        layoutElement.preferredHeight = preferredHeight;
-        layoutElement.flexibleWidth = 1f;
+        RuntimeUiStyle.ApplyLayoutElement(target, preferredHeight);
+    }
+
+    private void NormalizeQuestListLayout()
+    {
+        VerticalLayoutGroup layout = questListParent.GetComponent<VerticalLayoutGroup>();
+        if (layout != null)
+        {
+            layout.padding = new RectOffset(28, 28, 24, 28);
+            layout.spacing = 18f;
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
+        }
+
+        ContentSizeFitter fitter = questListParent.GetComponent<ContentSizeFitter>();
+        if (fitter != null)
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
     }
 
     private void Stretch(RectTransform rect)

@@ -14,6 +14,7 @@ public class ActiveQuestUIItem : MonoBehaviour
     private ExternalQuestData currentExternal;
     private Image backgroundImage;
     private Image buttonImage;
+    private TextMeshProUGUI buttonLabel;
 
     public void Setup(QuestData quest)
     {
@@ -24,7 +25,7 @@ public class ActiveQuestUIItem : MonoBehaviour
         questNameText.text = currentQuest.questName;
         descriptionText.text = GetProgressDescription(currentQuest);
         rewardText.text = FormatReward(currentQuest.rewardGold, currentQuest.rewardXP);
-        ApplyCardStyle(new Color(0.16f, 0.20f, 0.27f, 1f), new Color(0.22f, 0.48f, 0.78f, 1f));
+        ApplyCardStyle(new Color(0.16f, 0.20f, 0.27f, 1f), RuntimeUiStyle.Blue);
 
         SetButtonState(quest.CheckReady(), "Claim");
     }
@@ -189,6 +190,11 @@ public class ActiveQuestUIItem : MonoBehaviour
 
         if (buttonImage == null && readyBut != null)
             buttonImage = readyBut.GetComponent<Image>();
+
+        if (readyBut != null && buttonLabel == null)
+            buttonLabel = RuntimeUiStyle.GetOrCreateButtonLabel(readyBut, "Claim");
+
+        ApplyUnifiedLayout();
     }
 
     private void ApplyExternalStyle(ExternalQuestData quest)
@@ -196,18 +202,66 @@ public class ActiveQuestUIItem : MonoBehaviour
         switch (quest.status)
         {
             case RealWorldTaskStatus.Submitted:
-                ApplyCardStyle(new Color(0.18f, 0.18f, 0.24f, 1f), new Color(0.42f, 0.44f, 0.52f, 1f));
+                ApplyCardStyle(new Color(0.18f, 0.18f, 0.24f, 1f), RuntimeUiStyle.NeutralButton);
                 break;
             case RealWorldTaskStatus.Approved:
-                ApplyCardStyle(new Color(0.12f, 0.24f, 0.17f, 1f), new Color(0.18f, 0.58f, 0.29f, 1f));
+                ApplyCardStyle(new Color(0.12f, 0.24f, 0.17f, 1f), RuntimeUiStyle.Green);
                 break;
             case RealWorldTaskStatus.Rejected:
-                ApplyCardStyle(new Color(0.28f, 0.15f, 0.14f, 1f), new Color(0.72f, 0.29f, 0.24f, 1f));
+                ApplyCardStyle(new Color(0.28f, 0.15f, 0.14f, 1f), RuntimeUiStyle.Red);
                 break;
             default:
                 ApplyCardStyle(new Color(0.15f, 0.21f, 0.21f, 1f), new Color(0.20f, 0.55f, 0.58f, 1f));
                 break;
         }
+    }
+
+    private void ApplyUnifiedLayout()
+    {
+        RectTransform rootRect = GetComponent<RectTransform>();
+        if (rootRect != null)
+            rootRect.sizeDelta = new Vector2(rootRect.sizeDelta.x, RuntimeUiStyle.QuestCardHeight);
+
+        RuntimeUiStyle.ApplyLayoutElement(gameObject, RuntimeUiStyle.QuestCardHeight);
+
+        ConfigureTextRect(questNameText, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(32f, -84f), new Vector2(-290f, -28f));
+        ConfigureTextRect(descriptionText, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(32f, 72f), new Vector2(-290f, -98f));
+        ConfigureTextRect(rewardText, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(32f, 24f), new Vector2(-290f, 68f));
+
+        RuntimeUiStyle.ApplyText(questNameText, RuntimeUiStyle.CardTitleSize, FontStyles.Bold, RuntimeUiStyle.Text, TextAlignmentOptions.Left);
+        RuntimeUiStyle.ApplyText(descriptionText, RuntimeUiStyle.BodySize, FontStyles.Normal, RuntimeUiStyle.MutedText, TextAlignmentOptions.Left);
+        RuntimeUiStyle.ApplyText(rewardText, RuntimeUiStyle.BodySize, FontStyles.Bold, RuntimeUiStyle.Gold, TextAlignmentOptions.Left);
+
+        if (readyBut != null)
+        {
+            RuntimeUiStyle.ApplyButton(readyBut, RuntimeUiStyle.Blue, 230f, 92f);
+            RectTransform buttonRect = readyBut.GetComponent<RectTransform>();
+            if (buttonRect != null)
+            {
+                buttonRect.anchorMin = new Vector2(1f, 0.5f);
+                buttonRect.anchorMax = new Vector2(1f, 0.5f);
+                buttonRect.pivot = new Vector2(1f, 0.5f);
+                buttonRect.anchoredPosition = new Vector2(-32f, 0f);
+            }
+
+            RuntimeUiStyle.ApplyText(buttonLabel, RuntimeUiStyle.ButtonTextSize, FontStyles.Bold, Color.white, TextAlignmentOptions.Center);
+        }
+    }
+
+    private void ConfigureTextRect(TextMeshProUGUI text, Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax)
+    {
+        if (text == null)
+            return;
+
+        RectTransform rect = text.GetComponent<RectTransform>();
+        if (rect == null)
+            return;
+
+        rect.anchorMin = anchorMin;
+        rect.anchorMax = anchorMax;
+        rect.offsetMin = offsetMin;
+        rect.offsetMax = offsetMax;
+        rect.pivot = new Vector2(0f, 0.5f);
     }
 
     private void ApplyCardStyle(Color cardColor, Color actionColor)

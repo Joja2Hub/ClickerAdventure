@@ -7,6 +7,7 @@ public class UpgradeShopRuntimeOverlay : MonoBehaviour
     private PlayerStats playerStats;
     private Canvas canvas;
     private CanvasGroup panelGroup;
+    private GameObject blockerObject;
     private RectTransform panelRect;
     private TextMeshProUGUI moneyText;
     private TextMeshProUGUI damageText;
@@ -191,6 +192,9 @@ public class UpgradeShopRuntimeOverlay : MonoBehaviour
         panelGroup.alpha = 1f;
         panelGroup.interactable = true;
         panelGroup.blocksRaycasts = true;
+        if (blockerObject != null)
+            blockerObject.SetActive(true);
+
         panelRect.localScale = Vector3.one;
         Refresh();
     }
@@ -200,6 +204,9 @@ public class UpgradeShopRuntimeOverlay : MonoBehaviour
         panelGroup.alpha = 0f;
         panelGroup.interactable = false;
         panelGroup.blocksRaycasts = false;
+        if (blockerObject != null)
+            blockerObject.SetActive(false);
+
         panelRect.localScale = Vector3.one * 0.96f;
     }
 
@@ -214,7 +221,7 @@ public class UpgradeShopRuntimeOverlay : MonoBehaviour
     {
         Button openButton = CreateButton(parent, "ShopButton", "Shop", new Color(0.11f, 0.28f, 0.43f, 0.94f), out _);
         RectTransform rect = openButton.GetComponent<RectTransform>();
-        rect.sizeDelta = new Vector2(170f, 72f);
+        RuntimeUiStyle.ApplyButton(openButton, new Color(0.11f, 0.28f, 0.43f, 0.94f));
         if (!RuntimeUiHost.UsesLayout(parent))
         {
             rect.anchorMin = new Vector2(1f, 1f);
@@ -222,19 +229,13 @@ public class UpgradeShopRuntimeOverlay : MonoBehaviour
             rect.pivot = new Vector2(1f, 1f);
             rect.anchoredPosition = new Vector2(-30f, -110f);
         }
-
-        LayoutElement element = openButton.gameObject.GetComponent<LayoutElement>();
-        if (element == null)
-            element = openButton.gameObject.AddComponent<LayoutElement>();
-
-        element.preferredWidth = 170f;
-        element.preferredHeight = 72f;
         openButton.onClick.AddListener(ShowPanel);
     }
 
     private void CreatePanel(Transform parent)
     {
         GameObject blocker = CreateUIObject("ShopBlocker", parent);
+        blockerObject = blocker;
         Stretch(blocker.GetComponent<RectTransform>());
         Image blockerImage = blocker.AddComponent<Image>();
         blockerImage.color = new Color(0f, 0f, 0f, 0.42f);
@@ -287,6 +288,7 @@ public class UpgradeShopRuntimeOverlay : MonoBehaviour
         CreateDivider(panel.transform);
 
         Button closeButton = CreateButton(panel.transform, "CloseButton", "Close", new Color(0.19f, 0.2f, 0.24f, 1f), out _);
+        RuntimeUiStyle.ApplyButton(closeButton, new Color(0.19f, 0.2f, 0.24f, 1f), 220f, RuntimeUiStyle.PanelButtonHeight);
         closeButton.onClick.AddListener(HidePanel);
     }
 
@@ -323,7 +325,8 @@ public class UpgradeShopRuntimeOverlay : MonoBehaviour
         statText.color = new Color(0.82f, 0.86f, 0.92f, 1f);
 
         buyButton = CreateButton(row.transform, "BuyButton", "Buy", buttonColor, out costText);
-        LayoutElement buttonElement = buyButton.gameObject.AddComponent<LayoutElement>();
+        RuntimeUiStyle.ApplyButton(buyButton, buttonColor, 210f, 78f);
+        LayoutElement buttonElement = buyButton.gameObject.GetComponent<LayoutElement>();
         buttonElement.preferredWidth = 210f;
         buttonElement.preferredHeight = 78f;
     }
@@ -333,8 +336,9 @@ public class UpgradeShopRuntimeOverlay : MonoBehaviour
         GameObject buttonObject = CreateColoredObject(parent, name, color);
         Button button = buttonObject.AddComponent<Button>();
         button.targetGraphic = buttonObject.GetComponent<Image>();
+        RuntimeUiStyle.ApplyButton(button, color, 220f, RuntimeUiStyle.PanelButtonHeight);
 
-        labelText = CreateText(buttonObject.transform, label, 27, FontStyles.Bold);
+        labelText = CreateText(buttonObject.transform, label, RuntimeUiStyle.ButtonTextSize, FontStyles.Bold);
         labelText.raycastTarget = false;
         Stretch(labelText.GetComponent<RectTransform>());
 

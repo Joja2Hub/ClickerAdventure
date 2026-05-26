@@ -189,7 +189,7 @@ public class AchievementRuntimeOverlay : MonoBehaviour
     {
         Button openButton = CreateButton(parent, "AchievementsButton", "Goals", new Color(0.25f, 0.18f, 0.42f, 0.94f), out _);
         RectTransform rect = openButton.GetComponent<RectTransform>();
-        rect.sizeDelta = new Vector2(170f, 64f);
+        RuntimeUiStyle.ApplyButton(openButton, new Color(0.25f, 0.18f, 0.42f, 0.94f));
         if (!RuntimeUiHost.UsesLayout(parent))
         {
             rect.anchorMin = new Vector2(1f, 1f);
@@ -197,13 +197,6 @@ public class AchievementRuntimeOverlay : MonoBehaviour
             rect.pivot = new Vector2(1f, 1f);
             rect.anchoredPosition = new Vector2(-30f, -194f);
         }
-
-        LayoutElement element = openButton.gameObject.GetComponent<LayoutElement>();
-        if (element == null)
-            element = openButton.gameObject.AddComponent<LayoutElement>();
-
-        element.preferredWidth = 170f;
-        element.preferredHeight = 64f;
         openButton.onClick.AddListener(ShowPanel);
     }
 
@@ -270,7 +263,7 @@ public class AchievementRuntimeOverlay : MonoBehaviour
         Button button = buttonObject.AddComponent<Button>();
         button.targetGraphic = buttonObject.GetComponent<Image>();
 
-        labelText = CreateText(buttonObject.transform, label, 25, FontStyles.Bold);
+        labelText = CreateText(buttonObject.transform, label, RuntimeUiStyle.ButtonTextSize, FontStyles.Bold);
         labelText.raycastTarget = false;
         Stretch(labelText.GetComponent<RectTransform>());
 
