@@ -29,10 +29,34 @@ public class TownUIController : MonoBehaviour
 
         if (innButton != null)
             innButton.anchoredPosition = data.innPosition;
+
+        ConfigureZoneHighlight(shopButton);
+        ConfigureZoneHighlight(guildButton);
+        ConfigureZoneHighlight(innButton);
     }
 
     public void hideWindow()
     {
         this.gameObject.SetActive(false);
+    }
+
+    private void ConfigureZoneHighlight(RectTransform zone)
+    {
+        if (zone == null)
+            return;
+
+        Image image = zone.GetComponent<Image>();
+        if (image != null)
+            image.raycastTarget = true;
+
+        Button button = zone.GetComponent<Button>();
+        if (button != null && image != null)
+            button.targetGraphic = image;
+
+        TownZoneHighlight highlight = zone.GetComponent<TownZoneHighlight>();
+        if (highlight == null)
+            highlight = zone.gameObject.AddComponent<TownZoneHighlight>();
+
+        highlight.Initialize();
     }
 }

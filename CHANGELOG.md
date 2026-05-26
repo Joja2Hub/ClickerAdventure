@@ -72,6 +72,10 @@
 - Fixed upgrade shop close behavior by disabling the blocker object on hide and ensuring panel buttons have stable layout sizes.
 - Fixed town entry `NullReferenceException` by guarding missing `TownData`, missing background image, and missing button references.
 - Updated town UI lookup to search child objects for `TownUIController` when the controller is not on the root object.
+- Added visual lock overlays for map locations that require a higher player level.
+- Added locked location feedback that shows the required level and current player level.
+- Added hover/press highlighting for town zones.
+- Reworked enemy attack windup so attacking reads as a lunge instead of the enemy taking damage.
 
 ### Build and maintenance
 - Kept generated C# project includes updated for newly added scripts.

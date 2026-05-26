@@ -139,19 +139,40 @@ public class Enemy : MonoBehaviour
     {
         ShowAttackWarning(true);
 
-        const float duration = 0.42f;
+        const float duration = 0.46f;
         float elapsed = 0f;
-        Vector3 startScale = transform.localScale;
+        Vector3 startScale = baseScale;
+        Vector3 startLocalPosition = transform.localPosition;
+        Vector3 attackDirection = GetAttackDirection();
+        Vector3 windupPosition = startLocalPosition - attackDirection * 0.12f;
+        Vector3 strikePosition = startLocalPosition + attackDirection * 0.34f;
 
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
             float t = Mathf.Clamp01(elapsed / duration);
-            float wave = Mathf.Sin(t * Mathf.PI * 2f);
-            transform.localScale = startScale * (1f + 0.04f * wave);
 
-            if (enemySprite != null)
-                enemySprite.color = Color.Lerp(Color.white, new Color(1f, 0.52f, 0.36f, 1f), Mathf.Sin(t * Mathf.PI));
+            if (t < 0.45f)
+            {
+                float phase = t / 0.45f;
+                transform.localPosition = Vector3.Lerp(startLocalPosition, windupPosition, phase);
+                transform.localScale = Vector3.Lerp(startScale, startScale * 0.96f, phase);
+            }
+            else if (t < 0.68f)
+            {
+                float phase = (t - 0.45f) / 0.23f;
+                float eased = 1f - Mathf.Pow(1f - phase, 3f);
+                transform.localPosition = Vector3.Lerp(windupPosition, strikePosition, eased);
+                transform.localScale = Vector3.Lerp(startScale * 0.96f, startScale * 1.08f, eased);
+            }
+            else
+            {
+                float phase = (t - 0.68f) / 0.32f;
+                transform.localPosition = Vector3.Lerp(strikePosition, startLocalPosition, phase);
+                transform.localScale = Vector3.Lerp(startScale * 1.08f, startScale, phase);
+            }
+
+            PulseAttackWarning(t);
 
             yield return null;
         }
@@ -160,9 +181,36 @@ public class Enemy : MonoBehaviour
 
         if (!isDead)
         {
+            transform.localPosition = startLocalPosition;
             transform.localScale = baseScale;
-            enemySprite.color = Color.white;
+            if (enemySprite != null)
+                enemySprite.color = Color.white;
         }
+    }
+
+    private Vector3 GetAttackDirection()
+    {
+        Vector3 worldDirection = Vector3.left;
+        if (player != null)
+        {
+            Vector3 delta = player.transform.position - transform.position;
+            if (delta.sqrMagnitude > 0.001f)
+                worldDirection = delta.normalized;
+        }
+
+        if (transform.parent != null)
+            worldDirection = transform.parent.InverseTransformDirection(worldDirection).normalized;
+
+        return new Vector3(worldDirection.x, worldDirection.y, 0f).normalized;
+    }
+
+    private void PulseAttackWarning(float normalizedTime)
+    {
+        if (attackWarning == null)
+            return;
+
+        float pulse = 0.75f + Mathf.Sin(normalizedTime * Mathf.PI * 6f) * 0.25f;
+        attackWarning.localScale = new Vector3(0.34f + 0.18f * pulse, 0.08f, 1f);
     }
 
     private void PlayHitPulse()

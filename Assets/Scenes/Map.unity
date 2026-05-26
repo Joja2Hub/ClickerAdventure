@@ -1322,6 +1322,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   userId: id1
+  realWorldTasksCollection: realWorldTasks
+  enableParentReviewOverlay: 1
 --- !u!1001 &594624346
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2272,7 +2274,12 @@ MonoBehaviour:
   money: 100
   currentHealth: 100
   maxHealth: 100
-  currentDmg: 100
+  currentDmg: 1
+  damageUpgradeLevel: 0
+  healthUpgradeLevel: 0
+  critUpgradeLevel: 0
+  rageUpgradeLevel: 0
+  lootUpgradeLevel: 0
 --- !u!4 &912882537
 Transform:
   m_ObjectHideFlags: 0
